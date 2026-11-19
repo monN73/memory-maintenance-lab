@@ -1,0 +1,272 @@
+{
+  "schema_version": "0.2",
+  "status": "design_only",
+  "protocol_version": "0.3",
+  "cells": [
+    {
+      "cell_id": "direct-N0",
+      "track": "direct",
+      "strategy_spec_id": "N0",
+      "native_profile_id": "none",
+      "orchestration_profile_id": "direct-runner",
+      "integration_mode": "direct",
+      "readiness": "design_only"
+    },
+    {
+      "cell_id": "direct-N1",
+      "track": "direct",
+      "strategy_spec_id": "N1",
+      "native_profile_id": "none",
+      "orchestration_profile_id": "direct-runner",
+      "integration_mode": "direct",
+      "readiness": "design_only"
+    },
+    {
+      "cell_id": "direct-N2",
+      "track": "direct",
+      "strategy_spec_id": "N2",
+      "native_profile_id": "none",
+      "orchestration_profile_id": "direct-runner",
+      "integration_mode": "direct",
+      "readiness": "design_only"
+    },
+    {
+      "cell_id": "direct-N3",
+      "track": "direct",
+      "strategy_spec_id": "N3",
+      "native_profile_id": "none",
+      "orchestration_profile_id": "direct-runner",
+      "integration_mode": "direct",
+      "readiness": "design_only"
+    },
+    {
+      "cell_id": "direct-N4",
+      "track": "direct",
+      "strategy_spec_id": "N4",
+      "native_profile_id": "none",
+      "orchestration_profile_id": "direct-runner",
+      "integration_mode": "direct",
+      "readiness": "design_only"
+    },
+    {
+      "cell_id": "direct-N5",
+      "track": "direct",
+      "strategy_spec_id": "N5",
+      "native_profile_id": "none",
+      "orchestration_profile_id": "direct-runner",
+      "integration_mode": "direct",
+      "readiness": "implemented"
+    },
+    {
+      "cell_id": "direct-N6",
+      "track": "direct",
+      "strategy_spec_id": "N6",
+      "native_profile_id": "none",
+      "orchestration_profile_id": "direct-runner",
+      "integration_mode": "direct",
+      "readiness": "implemented_deferred"
+    },
+    {
+      "cell_id": "direct-N7",
+      "track": "direct",
+      "strategy_spec_id": "N7",
+      "native_profile_id": "none",
+      "orchestration_profile_id": "direct-runner",
+      "integration_mode": "direct",
+      "readiness": "implemented"
+    },
+    {
+      "cell_id": "direct-N8",
+      "track": "direct",
+      "strategy_spec_id": "N8",
+      "native_profile_id": "none",
+      "orchestration_profile_id": "direct-runner",
+      "integration_mode": "direct",
+      "readiness": "implemented"
+    },
+    {
+      "cell_id": "direct-N9",
+      "track": "direct",
+      "strategy_spec_id": "N9",
+      "native_profile_id": "none",
+      "orchestration_profile_id": "direct-runner",
+      "integration_mode": "direct",
+      "readiness": "implemented"
+    },
+    {
+      "cell_id": "direct-N10",
+      "track": "direct",
+      "strategy_spec_id": "N10",
+      "native_profile_id": "none",
+      "orchestration_profile_id": "direct-runner",
+      "integration_mode": "direct",
+      "readiness": "implemented"
+    },
+    {
+      "cell_id": "direct-N11",
+      "track": "direct",
+      "strategy_spec_id": "N11",
+      "native_profile_id": "none",
+      "orchestration_profile_id": "direct-runner",
+      "integration_mode": "direct",
+      "readiness": "implemented"
+    },
+    {
+      "cell_id": "direct-N12",
+      "track": "direct",
+      "strategy_spec_id": "N12",
+      "native_profile_id": "none",
+      "orchestration_profile_id": "direct-runner",
+      "integration_mode": "direct",
+      "readiness": "implemented"
+    },
+    {
+      "cell_id": "direct-N13",
+      "track": "direct",
+      "strategy_spec_id": "N13",
+      "native_profile_id": "none",
+      "orchestration_profile_id": "direct-runner",
+      "integration_mode": "direct",
+      "readiness": "implemented"
+    },
+    {
+      "cell_id": "direct-N14",
+      "track": "direct",
+      "strategy_spec_id": "N14",
+      "native_profile_id": "none",
+      "orchestration_profile_id": "direct-runner",
+      "integration_mode": "direct",
+      "readiness": "implemented"
+    }
+  ],
+  "batches": [
+    {
+      "batch_id": "direct-dev-30",
+      "cell_ids": [
+        "direct-N0",
+        "direct-N1",
+        "direct-N2",
+        "direct-N3",
+        "direct-N4"
+      ],
+      "dataset_ref": "pilot.json",
+      "subset_manifest": null,
+      "question_count": 30,
+      "repeats": 1,
+      "planned_runs": 150,
+      "purpose": "development_not_confirmatory"
+    }
+  ],
+  "comparisons": [
+    {
+      "comparison_id": "extractive-vs-llm-dev",
+      "control_cell": "direct-N3",
+      "treatment_cell": "direct-N4",
+      "changed_factors": [
+        "representation",
+        "merge_update",
+        "compaction"
+      ],
+      "claim_scope": "method_bundle",
+      "primary_metric": "end_to_end_success",
+      "requirements": [
+        "same_input_state_contract",
+        "same_budget_executor",
+        "same_orchestration",
+        "no_hidden_history_recovery",
+        "record_actual_maintenance_times"
+      ],
+      "status": "design_only",
+      "hypothesis": "相同预算和编排下，N4 相对 N3 的端到端成功率及资源开销存在差异；不将差异归因于单个组件。",
+      "maintenance_schedule": "adaptive_shared_thresholds"
+    },
+    {
+      "comparison_id": "fact-append-vs-update",
+      "control_cell": "direct-N9",
+      "treatment_cell": "direct-N10",
+      "changed_factors": [
+        "merge_update"
+      ],
+      "claim_scope": "controlled_component_update",
+      "primary_metric": "end_to_end_success",
+      "status": "implemented",
+      "hypothesis": "共用提取器、2K 容量与读出规则下，N10 的同键更新与显式撤回相比 N9 只追加可减少陈旧残留与重复占用。"
+    },
+    {
+      "comparison_id": "fact-base-vs-enhanced-extractor",
+      "control_cell": "direct-N10",
+      "treatment_cell": "direct-N14",
+      "changed_factors": [
+        "write_selection"
+      ],
+      "claim_scope": "controlled_component_extractor",
+      "primary_metric": "end_to_end_success",
+      "status": "implemented",
+      "hypothesis": "冻结 N10 后端状态槽位与更新/撤回规则，仅增强前端自然语言规则提取器，检验提取召回率对更新题的影响。"
+    },
+    {
+      "comparison_id": "fact-vs-hybrid-bundle",
+      "control_cell": "direct-N10",
+      "treatment_cell": "direct-N13",
+      "changed_factors": [
+        "write_selection",
+        "representation",
+        "eviction",
+        "read_injection"
+      ],
+      "claim_scope": "method_bundle",
+      "primary_metric": "end_to_end_success",
+      "status": "implemented",
+      "hypothesis": "整套结构化事实优先+16K FIFO 原文归档 BM25 混合方案对比纯规则事实记忆 N10 的系统级效果（非单变量消融）。"
+    },
+    {
+      "comparison_id": "archive-fifo-vs-session-balanced",
+      "control_cell": "direct-N8",
+      "treatment_cell": "direct-N12",
+      "changed_factors": [
+        "eviction"
+      ],
+      "claim_scope": "controlled_component_eviction",
+      "primary_metric": "end_to_end_success",
+      "status": "implemented",
+      "hypothesis": "在相同 16K 归档容量与 BM25 读出下，会话均衡淘汰相对 FIFO 对跨会话早期证据的保留影响。"
+    }
+  ],
+  "agent_factorial_template": {
+    "status": "pending_capability_audit",
+    "strategy_spec_id": "N4",
+    "orchestration_profile_id": "hermes-controlled-hook",
+    "target_mechanism": "context_compaction",
+    "fixed_other_native_capabilities": null,
+    "subset_manifest": null,
+    "claim_scope": null,
+    "cells": [
+      {
+        "cell_label": "A",
+        "external_enabled": false,
+        "native_target_enabled": false,
+        "identity_path": true
+      },
+      {
+        "cell_label": "B",
+        "external_enabled": true,
+        "native_target_enabled": false,
+        "identity_path": false
+      },
+      {
+        "cell_label": "C",
+        "external_enabled": false,
+        "native_target_enabled": true,
+        "identity_path": true
+      },
+      {
+        "cell_label": "D",
+        "external_enabled": true,
+        "native_target_enabled": true,
+        "identity_path": false
+      }
+    ],
+    "notes": "模板不是已支持或可启动的单元，能力与容量审计通过后实例化。",
+    "activation_requirement": "predeclared_capacity_and_trigger_opportunity_audit"
+  }
+}

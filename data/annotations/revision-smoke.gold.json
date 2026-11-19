@@ -1,0 +1,142 @@
+{
+  "scenario_id": "revision-smoke",
+  "purpose": "6轮协议验收，不足以证明长上下文性能或触发压缩",
+  "interval_semantics": "[valid_from, valid_to); null end means active",
+  "facts": [
+    {
+      "fact_id": "f-code",
+      "entity": "杉木",
+      "slot": "代号",
+      "value": "SQ-741",
+      "introduced_at": 1,
+      "valid_from": 1,
+      "valid_to": null,
+      "supersedes": null,
+      "source_turn_ids": [
+        1
+      ]
+    },
+    {
+      "fact_id": "f-owner-old",
+      "entity": "杉木",
+      "slot": "负责人",
+      "value": "林",
+      "introduced_at": 1,
+      "valid_from": 1,
+      "valid_to": 3,
+      "supersedes": null,
+      "source_turn_ids": [
+        1
+      ]
+    },
+    {
+      "fact_id": "f-date-old",
+      "entity": "杉木",
+      "slot": "交付日",
+      "value": "12月8日",
+      "introduced_at": 1,
+      "valid_from": 1,
+      "valid_to": 5,
+      "supersedes": null,
+      "source_turn_ids": [
+        1
+      ]
+    },
+    {
+      "fact_id": "f-other-owner",
+      "entity": "海盐",
+      "slot": "负责人",
+      "value": "吴",
+      "introduced_at": 2,
+      "valid_from": 2,
+      "valid_to": null,
+      "supersedes": null,
+      "source_turn_ids": [
+        2
+      ]
+    },
+    {
+      "fact_id": "f-owner-new",
+      "entity": "杉木",
+      "slot": "负责人",
+      "value": "周",
+      "introduced_at": 3,
+      "valid_from": 3,
+      "valid_to": null,
+      "supersedes": "f-owner-old",
+      "source_turn_ids": [
+        3
+      ]
+    },
+    {
+      "fact_id": "f-date-unknown",
+      "entity": "杉木",
+      "slot": "交付日",
+      "value": "未确定",
+      "introduced_at": 5,
+      "valid_from": 5,
+      "valid_to": null,
+      "supersedes": "f-date-old",
+      "source_turn_ids": [
+        5
+      ]
+    }
+  ],
+  "probes": [
+    {
+      "probe_id": "p-owner",
+      "turns": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "question": "杉木项目当前负责人是谁？",
+      "expected_by_turn": {
+        "1": "林",
+        "2": "林",
+        "3": "周",
+        "4": "周",
+        "5": "周",
+        "6": "周"
+      }
+    },
+    {
+      "probe_id": "p-date",
+      "turns": [
+        5,
+        6
+      ],
+      "question": "杉木项目当前交付日期是否已确定？",
+      "expected": "未确定；12月8日已经撤销"
+    },
+    {
+      "probe_id": "p-code",
+      "turns": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "question": "杉木项目的精确代号是什么？",
+      "expected": "SQ-741"
+    },
+    {
+      "probe_id": "p-history",
+      "turns": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "question": "杉木项目最初的负责人是谁？",
+      "expected": "林",
+      "query_type": "historical"
+    }
+  ],
+  "grading": "只给无歧义的正确答案计分；同时给出新旧值但未标明时序计错。每个 probe 独立复制同一状态，不相互刷新记忆。"
+}

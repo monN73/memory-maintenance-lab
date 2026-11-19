@@ -1,0 +1,1158 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Memory Maintenance Lab · 实验诊断报告</title>
+<style>
+:root{
+  --bg:#f4f6fb;
+  --surface:#ffffff;
+  --surface-2:#f8faff;
+  --ink:#142033;
+  --ink-2:#334155;
+  --muted:#64748b;
+  --border:#e2e8f0;
+  --border-strong:#cbd5e1;
+  --blue:#3b5bdb;
+  --blue-soft:#eef2ff;
+  --blue-border:#c7d2fe;
+  --green:#0d9488;
+  --green-soft:#ecfdf5;
+  --green-border:#a7f3d0;
+  --red:#dc2626;
+  --red-soft:#fef2f2;
+  --red-border:#fecaca;
+  --amber:#d97706;
+  --amber-soft:#fffbeb;
+  --amber-border:#fde68a;
+  --shadow-sm:0 1px 2px rgba(15,23,42,.04);
+  --shadow-md:0 8px 24px rgba(15,23,42,.05);
+  --radius:16px;
+}
+*{box-sizing:border-box}
+html,body{overflow-anchor:none}
+body{
+  margin:0;
+  background:radial-gradient(1200px 420px at 15% -8%,#e8eeff 0%,transparent 60%),var(--bg);
+  color:var(--ink);
+  font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+button,input,select{font:inherit}
+button{cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{
+  outline:2px solid var(--blue);
+  outline-offset:2px;
+}
+
+.shell{max-width:1520px;margin:0 auto;padding:28px 24px 40px}
+
+/* Header */
+.hero{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:20px;
+  flex-wrap:wrap;
+  padding:24px 28px;
+  margin-bottom:22px;
+  background:linear-gradient(135deg,#ffffff 0%,#f7f9ff 100%);
+  border:1px solid var(--border);
+  border-radius:20px;
+  box-shadow:var(--shadow-md);
+}
+.eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  font-size:11px;
+  letter-spacing:1.8px;
+  font-weight:800;
+  color:var(--blue);
+  text-transform:uppercase;
+}
+.eyebrow::before{
+  content:"";
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:var(--blue);
+  box-shadow:0 0 0 4px var(--blue-soft);
+}
+h1{font-size:28px;letter-spacing:-.6px;margin:6px 0 4px;font-weight:800}
+h2{font-size:18px;margin:0;font-weight:750;letter-spacing:-.2px}
+h3{font-size:13px;margin:0;font-weight:700}
+.muted,.empty{color:var(--muted)}
+.meta{font-size:12px;overflow-wrap:anywhere}
+.hero-right{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:6px;
+  text-align:right;
+}
+.badge-row{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+
+/* Chips / Badges */
+.chip{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  border-radius:999px;
+  padding:3px 10px;
+  background:#f1f5f9;
+  color:#475569;
+  border:1px solid #e2e8f0;
+  font-size:11px;
+  font-weight:600;
+  white-space:nowrap;
+}
+.chip.ok{color:#065f46;background:var(--green-soft);border-color:var(--green-border)}
+.chip.bad{color:#991b1b;background:var(--red-soft);border-color:var(--red-border)}
+.chip.warn{color:#92400e;background:var(--amber-soft);border-color:var(--amber-border)}
+.chip.blue{color:#1e40af;background:var(--blue-soft);border-color:var(--blue-border)}
+
+/* KPI Cards */
+.cards{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:14px;
+  margin-bottom:22px;
+}
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:18px 20px;
+  box-shadow:var(--shadow-sm);
+  transition:transform .15s ease,box-shadow .15s ease;
+}
+.card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.card-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card-strategy{
+  font-size:14px;
+  font-weight:800;
+  color:var(--ink);
+  padding:2px 9px;
+  background:var(--surface-2);
+  border:1px solid var(--border);
+  border-radius:8px;
+}
+.card .number{
+  font-size:30px;
+  line-height:1.25;
+  font-weight:800;
+  font-variant-numeric:tabular-nums;
+  margin:10px 0 6px;
+  color:var(--ink);
+}
+.progress{
+  height:6px;
+  border-radius:999px;
+  background:#eef2f7;
+  overflow:hidden;
+  margin-bottom:10px;
+}
+.progress > span{
+  display:block;
+  height:100%;
+  background:linear-gradient(90deg,var(--blue),#6366f1);
+  border-radius:999px;
+}
+.card small{display:block;color:var(--muted);font-size:12px}
+
+/* Panels */
+.panel{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:22px 24px;
+  margin-bottom:20px;
+  box-shadow:var(--shadow-sm);
+}
+.section-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  flex-wrap:wrap;
+  margin-bottom:16px;
+}
+.count{font-size:12px;color:var(--muted)}
+
+/* Tables */
+.scroll{overflow-x:auto;border:1px solid var(--border);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th{
+  color:var(--muted);
+  font-weight:700;
+  text-align:left;
+  background:#f8fafc;
+  font-size:11.5px;
+  letter-spacing:.3px;
+}
+th,td{padding:11px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+.matrix tbody tr{transition:background .12s ease;cursor:pointer}
+.matrix tbody tr:hover{background:#f8faff}
+.matrix tbody tr.active{background:var(--blue-soft)}
+.q-preview{
+  max-width:420px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  color:var(--ink-2);
+}
+button.flat{
+  background:transparent;
+  border:0;
+  padding:0;
+  color:var(--blue);
+  font-weight:700;
+  text-align:left;
+}
+button.flat:hover{text-decoration:underline}
+
+/* Controls */
+.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.controls input,.controls select,select,input[type=search]{
+  border:1px solid var(--border);
+  padding:8px 12px;
+  background:#fff;
+  border-radius:10px;
+  color:var(--ink);
+  font-size:13px;
+}
+input[type=search]{min-width:240px}
+.pagination{display:flex;justify-content:flex-end;gap:10px;align-items:center;margin-top:12px}
+.navbutton{
+  border:1px solid var(--border);
+  border-radius:9px;
+  padding:6px 14px;
+  background:#fff;
+  color:var(--ink-2);
+  font-size:12.5px;
+  font-weight:600;
+}
+.navbutton:hover:not(:disabled){background:#f8fafc;border-color:var(--border-strong)}
+.navbutton:disabled{opacity:.45;cursor:not-allowed}
+
+/* Question Summary Banner inside #trace */
+.q-banner{
+  background:linear-gradient(135deg,#f8faff 0%,#f3f6ff 100%);
+  border:1px solid var(--blue-border);
+  border-radius:14px;
+  padding:18px 20px;
+  margin-bottom:16px;
+}
+.q-banner .question{font-size:18px;font-weight:750;margin:6px 0 12px;line-height:1.45}
+.qa-summary-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:10px;
+}
+.qa-box{
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:11px;
+  padding:12px 14px;
+}
+.qa-box-label{
+  font-size:11px;
+  font-weight:700;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.6px;
+  margin-bottom:6px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.qa-box-body{
+  font-size:13px;
+  line-height:1.65;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  max-height:180px;
+  overflow-y:auto;
+}
+
+/* Strategy Tabs & Metric Strip */
+.tabs-bar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+  margin:14px 0 10px;
+}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tabs button{
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:7px 15px;
+  background:#fff;
+  color:var(--muted);
+  font-weight:650;
+  font-size:13px;
+  transition:all .12s ease;
+}
+.tabs button:hover{border-color:var(--border-strong);color:var(--ink)}
+.tabs button.active{
+  background:var(--blue);
+  border-color:var(--blue);
+  color:#fff;
+  box-shadow:0 3px 10px rgba(59,91,219,.22);
+}
+
+.segmented{
+  display:inline-flex;
+  background:#f1f5f9;
+  padding:3px;
+  border-radius:10px;
+  border:1px solid var(--border);
+}
+.segmented button{
+  border:0;
+  background:transparent;
+  padding:5px 12px;
+  border-radius:7px;
+  font-size:12px;
+  font-weight:650;
+  color:var(--muted);
+}
+.segmented button.active{
+  background:#fff;
+  color:var(--ink);
+  box-shadow:var(--shadow-sm);
+}
+
+.metric-strip{
+  display:flex;
+  gap:16px;
+  flex-wrap:wrap;
+  align-items:center;
+  padding:10px 14px;
+  background:#f8fafc;
+  border:1px solid var(--border);
+  border-radius:10px;
+  color:var(--muted);
+  font-size:12px;
+  margin-bottom:12px;
+}
+.metric-strip strong{color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* Chart */
+.chart-wrap{
+  background:#f8faff;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px 14px 8px;
+  margin:12px 0 18px;
+}
+.chart{width:100%;height:110px;display:block}
+.chart circle{cursor:pointer;transition:r .12s ease}
+.chart circle:hover{r:6}
+
+/* Workspace */
+.workspace{
+  display:grid;
+  grid-template-columns:270px minmax(0,1fr);
+  gap:20px;
+  align-items:start;
+}
+.sidebar{
+  position:sticky;
+  top:16px;
+  max-height:calc(100vh - 32px);
+  display:flex;
+  flex-direction:column;
+  background:#f8fafc;
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:12px;
+}
+.toolbar{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:8px;
+  flex-shrink:0;
+}
+.sidebar input[type=search]{
+  width:100%;
+  min-width:0;
+  padding:6px 10px;
+  font-size:12px;
+  margin-bottom:8px;
+  flex-shrink:0;
+}
+.turn-list{
+  flex:1;
+  min-height:0;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  padding-right:3px;
+}
+.turn-button{
+  display:block;
+  width:100%;
+  border:1px solid transparent;
+  background:#fff;
+  text-align:left;
+  border-radius:10px;
+  padding:9px 11px;
+  margin:5px 0;
+  color:var(--ink);
+  box-shadow:0 1px 2px rgba(15,23,42,.03);
+  transition:all .12s ease;
+}
+.turn-button:hover{border-color:var(--border-strong);background:#fff}
+.turn-button.active{background:var(--blue-soft);border-color:var(--blue-border)}
+.turn-button.final-btn{border-left:3px solid var(--blue)}
+.turn-button .title{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:2px}
+.turn-button small{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--muted);
+  font-size:11.5px;
+}
+.turn-button.unreached{opacity:.58}
+
+/* Turn Cards (All-Turns Timeline & Single Turn) */
+.timeline{display:flex;flex-direction:column;gap:16px}
+.turn-card{
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:16px 18px;
+  box-shadow:var(--shadow-sm);
+  scroll-margin-top:16px;
+  transition:border-color .2s ease,box-shadow .2s ease;
+}
+.turn-card.is-final{
+  border:1.5px solid var(--blue-border);
+  background:linear-gradient(180deg,#f9fbff 0%,#ffffff 100%);
+  box-shadow:var(--shadow-md);
+}
+.turn-card.flash{
+  border-color:var(--blue);
+  box-shadow:0 0 0 3px var(--blue-soft);
+}
+.turn-card-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+  padding-bottom:10px;
+  border-bottom:1px solid #f1f5f9;
+}
+.turn-title-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.turn-num{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:800;
+  font-size:12.5px;
+  padding:3px 10px;
+  border-radius:8px;
+  background:#f1f5f9;
+  color:var(--ink);
+}
+.turn-card.is-final .turn-num{background:var(--blue);color:#fff}
+.turn-tokens{display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;color:var(--muted)}
+.turn-tokens strong{color:var(--ink-2);font-variant-numeric:tabular-nums}
+
+.io-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.io{
+  border:1px solid var(--border);
+  border-radius:12px;
+  overflow:hidden;
+  min-width:0;
+  background:#fff;
+}
+.io.question-box{border-color:#dbeafe;background:#fafcff}
+.io.answer-box{border-color:#d1fae5;background:#fafffd}
+.io.final-answer-box{border-color:var(--blue-border);background:#f8faff}
+.io h3{
+  padding:9px 14px;
+  margin:0;
+  background:#f8fafc;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
+  font-size:12.5px;
+}
+.io.question-box h3{background:#eff6ff;border-bottom-color:#dbeafe;color:#1e3a8a}
+.io.answer-box h3{background:#ecfdf5;border-bottom-color:#d1fae5;color:#065f46}
+.io.final-answer-box h3{background:var(--blue-soft);border-bottom-color:var(--blue-border);color:#1e3a8a}
+.text{
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  padding:13px 15px;
+  font-size:13px;
+  line-height:1.72;
+  max-height:340px;
+  overflow-y:auto;
+  color:var(--ink);
+}
+.text.expanded{max-height:none}
+.expand-btn{
+  border:0;
+  background:transparent;
+  color:var(--blue);
+  font-size:11.5px;
+  font-weight:600;
+  padding:2px 6px;
+  border-radius:6px;
+}
+.expand-btn:hover{background:rgba(59,91,219,.08)}
+
+.notice{
+  background:var(--amber-soft);
+  border:1px solid var(--amber-border);
+  padding:10px 14px;
+  border-radius:10px;
+  color:#92400e;
+  margin:10px 0;
+  font-size:12px;
+}
+.event{
+  border:1px solid var(--amber-border);
+  border-radius:12px;
+  padding:14px;
+  margin-top:12px;
+  background:#fffdf7;
+}
+.probe-box{
+  border:1px solid var(--blue-border);
+  border-radius:12px;
+  padding:14px;
+  margin-top:12px;
+  background:#f8faff;
+}
+.probe-box.fail{
+  border-color:var(--red-border);
+  background:#fffafa;
+}
+.event-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-bottom:8px;
+}
+details{margin:10px 0 0}
+summary{cursor:pointer;font-weight:650;font-size:12.5px;color:#475569;user-select:none}
+summary:hover{color:var(--blue)}
+pre{
+  margin:8px 0 0;
+  padding:12px 14px;
+  background:#f8fafc;
+  border:1px solid var(--border);
+  border-radius:10px;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;
+  max-height:360px;
+  overflow:auto;
+}
+.loading{padding:36px;text-align:center;color:var(--muted)}
+.compact{font-size:12px}
+footer{font-size:12px;color:var(--muted);padding:12px 0 28px;text-align:center}
+
+@media(max-width:960px){
+  .shell{padding:14px}
+  .workspace{grid-template-columns:1fr}
+  .sidebar{position:static;max-height:none}
+  .turn-list{max-height:240px}
+  .io-grid,.qa-summary-grid{grid-template-columns:1fr}
+  .hero{padding:18px}
+  .hero-right{align-items:flex-start;text-align:left}
+  h1{font-size:23px}
+}
+</style>
+</head>
+<body>
+<main class="shell">
+  <header class="hero">
+    <div>
+      <div class="eyebrow">MEMORY MAINTENANCE LAB · EXPERIMENT REPORT</div>
+      <h1>从结果到每一轮记忆</h1>
+      <div id="batch" class="meta muted"></div>
+    </div>
+    <div id="identity" class="hero-right meta"></div>
+  </header>
+
+  <div id="cards" class="cards"></div>
+
+  <section class="panel">
+    <div class="section-head">
+      <h2>策略表现</h2>
+      <span class="count">先看端到端完成率，再看已判定准确率</span>
+    </div>
+    <div class="scroll"><table id="overview"></table></div>
+    <details>
+      <summary>配对比较与 95% 置信区间</summary>
+      <div class="scroll" style="margin-top:10px"><table id="comparisons"></table></div>
+    </details>
+  </section>
+
+  <section class="panel">
+    <div class="section-head">
+      <h2>题目浏览</h2>
+      <span id="questionCount" class="count"></span>
+    </div>
+    <div class="controls">
+      <input id="search" type="search" placeholder="搜索题目 ID 或问题内容…" aria-label="搜索题目">
+      <select id="typeFilter" aria-label="筛选题型"><option value="">全部题型</option></select>
+    </div>
+    <div class="scroll"><table id="matrix" class="matrix"></table></div>
+    <div class="pagination">
+      <button id="pagePrev" class="navbutton">上一页</button>
+      <span id="pageLabel" class="count"></span>
+      <button id="pageNext" class="navbutton">下一页</button>
+    </div>
+  </section>
+
+  <section class="panel" id="trace">
+    <div class="section-head">
+      <h2>逐轮问答与记忆轨迹</h2>
+      <span class="chip blue">支持全景对话流 &amp; 单轮聚焦</span>
+    </div>
+    <div id="detail" class="empty">请选择一道题，查看每一轮的问题、回答与记忆维护过程。</div>
+  </section>
+
+  <footer>
+    token 数若为估算值会标记 est。空值表示未记录或不可评估，不按零分处理。历史回放的原始回答与实际 API 输出分开显示。离线查看时请保留 report.html 与 details 文件夹。__EVIDENCE_TRAJECTORY_LINK__
+  </footer>
+</main>
+
+<script>
+const DATA=__REPORT_PAYLOAD__;
+window.REPORT_DETAILS=__REPORT_DETAILS__;
+const state={
+  qid:null,
+  strategy:null,
+  turn:null,
+  page:0,
+  filter:'all',
+  turnSearch:'',
+  viewMode:'all',
+  search:''
+};
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const n=x=>x==null?'—':Number(x).toLocaleString();
+const pct=x=>x==null?'—':(x*100).toFixed(1)+'%';
+const fmtMs=x=>x==null?'—':Math.round(x).toLocaleString()+' ms';
+const badge=(text,cls='')=>`<span class="chip ${cls}">${esc(text)}</span>`;
+const label=r=>r.status!=='completed'
+  ? badge(r.status==='overflow'?'超预算':'运行错误',r.status==='overflow'?'warn':'bad')
+  : r.judge_label===true
+    ? badge('正确','ok')
+    : r.judge_label===false
+      ? badge('错误','bad')
+      : badge('未判定');
+
+function table(headers,rows){
+  return '<thead><tr>'+headers.map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr></thead>'
+    +'<tbody>'+rows.map(row=>'<tr>'+row.map(x=>'<td>'+x+'</td>').join('')+'</tr>').join('')+'</tbody>';
+}
+
+$('batch').textContent='Batch: '+DATA.batch_id;
+$('identity').innerHTML=`<div class="badge-row">${badge(DATA.dataset.variant||'dataset','blue')} ${badge(DATA.judge_provider ? '评分 '+DATA.judge_provider : '未评分')}</div><span class="muted">Judge: ${esc(DATA.judge_model || "—")} · ${esc(DATA.dataset.subset_manifest||'')}</span>`;
+
+$('cards').innerHTML=DATA.overview.map(x=>{
+  const rate=Math.max(0,Math.min(100,(x.end_to_end_success||0)*100));
+  return `<div class="card">
+    <div class="card-top"><span class="card-strategy">${esc(x.strategy)}</span><span class="count">维护 ${n(x.total_maint_events)} 次</span></div>
+    <div class="number">${x.judged ? pct(x.end_to_end_success) : "未评分"}</div><small>全题正确率（未评分时为暂定值） · 完成率 ${pct(x.planned?x.predicted/x.planned:null)}</small>
+    <div class="progress"><span style="width:${rate.toFixed(1)}%"></span></div>
+    <small>生成 ${x.predicted}/${x.planned} · 正确 ${x.correct} · 错误 ${x.errors} · 超预算 ${x.overflow}</small>
+    <small>在线读取 P50: ${fmtMs(x.readout_latency_p50_ms)} · 写入维护 P50: ${fmtMs(x.maint_latency_p50_ms)}</small>
+  </div>`;
+}).join('');
+
+$('overview').innerHTML=table(
+  ['策略','完成 / 计划','有效判定','正确 / 计划','完成题准确率（辅助）','失败明细 / 待评分','维护事件','归档容量 (est)','维护 LLM 逻辑调用','证据保留 (可评估题)','证据全齐','首次证据遗漏 / 新增 / 旧值残留','错因归因 (丢证据/在但错/中断)','主任务 + 维护 token','写入维护 (P50 / P95)','检索组装 (P50 / P95)','模型回答 (P50 / P95)','在线读取 (P50)'],
+  DATA.overview.map(x=>{
+    const ob=x.outcome_breakdown||{};
+    const evStr=x.avg_evidence_retention!=null?`<strong>${pct(x.avg_evidence_retention)}</strong> (${n(x.evidence_evaluable_count)}题)`:(x.strategy==='N1'||x.strategy==='N2'||x.strategy==='N3'||x.strategy==='N4'?'不可评估':'—');
+    const allEvStr=x.all_evidence_retained_count!=null?`${n(x.all_evidence_retained_count)} / ${n(x.evidence_evaluable_count)}`:'—';
+    const attrStr=`${n(ob.evidence_lost||0)} / ${n(ob.evidence_present_wrong_answer||0)} / ${n(ob.execution_failure||0)}`;
+    return [
+      `<strong>${esc(x.strategy)}</strong>`,
+      `${x.predicted} / ${x.planned}`,
+      n(x.judged),
+      x.judged ? `${x.correct} / ${x.planned}` : "未评分",
+      x.judged?`<strong>${pct(x.correct/x.judged)}</strong>`:'N/A · 无有效判定',
+      esc(Object.entries(x.failure_types||{}).map(([k,v])=>`${k}: ${v}`).join(' · ') || '无') + ` · 待评分 ${n(x.scoring_pending)}`,
+      n(x.total_maint_events),
+      typeof x.archive_capacity_tokens_est === "string" ? esc(x.archive_capacity_tokens_est) : n(x.archive_capacity_tokens_est),
+      n(x.maintenance_llm_logical_calls),
+      evStr,
+      allEvStr,
+      x.total_fact_omissions!=null?`${n(x.total_fact_omissions)} / ${n(x.total_false_additions)} / ${n(x.total_stale_residues)}`:'—',
+      attrStr,
+      n(x.total_tokens),
+      `${fmtMs(x.maint_latency_p50_ms)} / ${fmtMs(x.maint_latency_p95_ms)}`,
+      `${fmtMs(x.search_latency_p50_ms)} / ${fmtMs(x.search_latency_p95_ms)}`,
+      `${fmtMs(x.answer_latency_p50_ms)} / ${fmtMs(x.answer_latency_p95_ms)}`,
+      fmtMs(x.readout_latency_p50_ms)
+    ];
+  })
+);
+
+$('comparisons').innerHTML=table(
+  ['比较','配对题数','端到端差值','95% 区间'],
+  DATA.comparisons.map(x=>[
+    `<strong>${esc(x.name)}</strong>`,
+    n(x.n),
+    pct(x.mean_diff),
+    x.ci95?x.ci95.map(pct).join(' ～ '):'—'
+  ])
+);
+
+[...new Set(DATA.questions.map(q=>q.question_type))].forEach(t=>{
+  const o=document.createElement('option');
+  o.value=t;
+  o.textContent=t;
+  $('typeFilter').appendChild(o);
+});
+
+function drawMatrix(){
+  const text=$('search').value.toLowerCase(),type=$('typeFilter').value;
+  const qs=DATA.questions.filter(q=>(!type||q.question_type===type)&&(!text||(q.question_id+' '+q.question).toLowerCase().includes(text)));
+  const size=10;
+  state.page=Math.min(state.page,Math.max(0,Math.ceil(qs.length/size)-1));
+  const subset=qs.slice(state.page*size,(state.page+1)*size);
+  const strategies=DATA.overview.map(s=>s.strategy);
+  $('matrix').innerHTML=table(
+    ['题目 ID','题型','问题摘要',...strategies],
+    subset.map(q=>[
+      `<button class="flat" data-question="${esc(q.question_id)}">${esc(q.question_id)}</button>`,
+      esc(q.question_type)+(q.is_abstention?' '+badge('拒答题','warn'):''),
+      `<div class="q-preview" title="${esc(q.question)}">${esc(q.question)}</div>`,
+      ...strategies.map(s=>q.strategies[s]?label(q.strategies[s]):'—')
+    ])
+  );
+  $('matrix').querySelectorAll('tbody tr').forEach(tr=>{
+    const btn=tr.querySelector('[data-question]');
+    if(!btn)return;
+    if(btn.dataset.question===state.qid)tr.classList.add('active');
+    tr.onclick=()=>selectQuestion(btn.dataset.question);
+  });
+  $('questionCount').textContent=`共 ${qs.length} 道题`;
+  $('pageLabel').textContent=`${qs.length?state.page+1:0} / ${Math.max(1,Math.ceil(qs.length/size))}`;
+  $('pagePrev').disabled=state.page===0;
+  $('pageNext').disabled=(state.page+1)*size>=qs.length;
+}
+
+$('search').oninput=$('typeFilter').onchange=()=>{state.page=0;drawMatrix()};
+$('pagePrev').onclick=()=>{state.page--;drawMatrix()};
+$('pageNext').onclick=()=>{state.page++;drawMatrix()};
+
+const loading={};
+async function loadQuestion(q){
+  if(window.REPORT_DETAILS[q.question_id])return window.REPORT_DETAILS[q.question_id];
+  if(!loading[q.question_id]){
+    loading[q.question_id]=new Promise((resolve,reject)=>{
+      const script=document.createElement('script');
+      script.src=q.file;
+      script.onload=()=>window.REPORT_DETAILS[q.question_id]?resolve(window.REPORT_DETAILS[q.question_id]):reject(new Error('题目数据缺失'));
+      script.onerror=()=>reject(new Error('无法加载详情，请保留 details 文件夹并从原目录打开报告。'));
+      document.head.appendChild(script);
+    });
+  }
+  return loading[q.question_id];
+}
+
+async function selectQuestion(qid){
+  state.qid=qid;
+  state.turn=null;
+  state.filter='all';
+  state.turnSearch='';
+  drawMatrix();
+  $('detail').className='';
+  $('detail').innerHTML='<div class="loading">正在读取逐轮问答与记忆记录…</div>';
+  try{
+    const q=await loadQuestion(DATA.questions.find(q=>q.question_id===qid));
+    if(state.qid!==qid)return;
+    state.strategy=q.strategies[state.strategy]?state.strategy:Object.keys(q.strategies)[0];
+    drawDetail();
+  }catch(e){
+    if(state.qid===qid)$('detail').innerHTML='<div class="notice">'+esc(e.message)+'</div>';
+  }
+}
+
+function activeData(){
+  const q=window.REPORT_DETAILS[state.qid];
+  return [q,q.strategies[state.strategy]];
+}
+
+function observed(info,id){return (info.turns||[]).find(t=>t.turn_id===id)}
+function events(info,id){return (info.events||[]).filter(t=>t.turn_id===id)}
+function probesFor(info,id){return (info.probes||[]).filter(p=>p.turn_id===id)}
+
+function ioBlock(title,text,tag='',cls='',idAttr=''){
+  const body=text==null||text===''
+    ? '<span class="muted">（无内容 / 未记录）</span>'
+    : esc(typeof text==='string'?text:JSON.stringify(text,null,2));
+  const isLong=typeof text==='string' && (text.length>500 || text.split('\n').length>10);
+  return `<div class="io ${cls}">
+    <h3>
+      <span>${esc(title)} ${tag?badge(tag):''}</span>
+      ${isLong?`<button type="button" class="expand-btn" data-expand>展开全文</button>`:''}
+    </h3>
+    <div class="text" ${idAttr}>${body}</div>
+  </div>`;
+}
+
+function renderTurnCard(t,info){
+  const row=observed(info,t.turn_id);
+  const ev=events(info,t.turn_id);
+  const pr=probesFor(info,t.turn_id);
+  const isFinal=t.kind==='final';
+  const output=isFinal?(row?.answer_text??info.hypothesis):t.output;
+
+  let html=`<article class="turn-card ${isFinal?'is-final':''}" id="turn-card-${t.turn_id}">
+    <div class="turn-card-head">
+      <div class="turn-title-group">
+        <span class="turn-num">${isFinal?'最终问答':'Turn '+t.turn_id}</span>
+        ${badge(row?.status||'未记录 / 未执行', row?.status==='ok'?'ok':(row?'warn':''))}
+        ${ev.length?badge(ev.length+' 次维护','warn'):''}
+        ${pr.length?badge('探针 '+pr.filter(p=>p.correct).length+'/'+pr.length, pr.every(p=>p.correct)?'ok':'bad'):''}
+        <span class="compact muted">${esc(t.timestamp||'')} · ${esc(t.session_id||'')}</span>
+      </div>
+      <div class="turn-tokens">
+        <span>上下文 est <strong>${n(row?.context_tokens_est)}</strong></span>
+        <span>记忆 est <strong>${n(row?.memory_tokens_est)}</strong></span>
+        <span>已摄入 est <strong>${n(row?.cumulative_ingested_tokens_est)}</strong></span>
+      </div>
+    </div>`;
+
+  if(!row){
+    html+='<div class="notice">此轮没有运行记录，下方仅展示数据集原文；可能尚未执行到此轮。</div>';
+  }
+
+  html+=`<div class="io-grid">
+    ${ioBlock(isFinal?'最终问题 (Question)':'本轮问题 / 用户输入', t.input, isFinal?'Final':'User', 'question-box')}
+    ${ioBlock(isFinal?'模型最终回答 (Model Answer)':'本轮回答 / 助手回复', output, isFinal?'API 实际输出':'数据集回放', isFinal?'final-answer-box':'answer-box')}
+  </div>`;
+
+  for(const e of ev){
+    const au=e.audit;
+    const evRetStr=au?(au.evidence_retention==null?'未出现 / N/A':`${pct(au.evidence_retention)} (${au.evidence_turns_retained}/${au.evidence_turns_total}轮)`):'';
+    html+=`<section class="event">
+      <div class="event-head">
+        <h3>记忆维护：${esc(e.mechanism)} ${badge(e.status||'unknown',e.status==='ok'?'ok':'warn')}</h3>
+        <div class="turn-tokens">
+          <span>压缩比 <strong>${n(e.metrics?.compression_ratio)}</strong></span>
+          <span>输入 / 输出 est <strong>${n(e.input_tokens)} / ${n(e.output_tokens)}</strong></span>
+        </div>
+      </div>
+      ${au?`<div class="metric-strip" style="margin:6px 0 10px">
+        <span>证据保留 <strong>${evRetStr}</strong></span>
+        <span>本次新丢证据 <strong>${n(au.fact_omission_count)}</strong></span>
+        <span>错误新增 <strong>${n(au.false_addition_count)} 句</strong></span>
+        <span>旧事实残留 <strong>${n(au.stale_fact_residue_count)} 轮</strong></span>
+      </div>`:''}
+      <details><summary>文本重叠指标（仅供参考，不代表事实保留）</summary>Jaccard ${n(e.metrics?.lexical_jaccard)} · Retention ${n(e.metrics?.lexical_retention)}</details>
+      <div class="io-grid">
+        ${ioBlock('维护输入', e.before_text, '旧记忆 + 移出历史')}
+        ${ioBlock('维护输出', e.after_text, ['llm_compaction','chunked_llm_compaction'].includes(e.mechanism)?'LLM 记忆正文':'保留文本', 'answer-box')}
+      </div>`;
+    if(e.attempts?.length){
+      e.attempts.forEach((a,i)=>{
+        html+=`<details><summary>调用尝试 ${i+1} · ${esc(a.status||'')} · finish: ${esc(a.response?.finish_reason||'未记录')}</summary><pre>${esc(JSON.stringify(a,null,2))}</pre></details>`;
+      });
+    }
+    html+='</section>';
+  }
+
+  for(const p of pr){
+    html+=`<section class="probe-box ${p.correct?'':'fail'}">
+      <div class="event-head">
+        <h3>隔离探针测试：${esc(p.probe_id||'probe')} ${badge(p.correct?'正确':'错误',p.correct?'ok':'bad')} ${p.readout_mode?badge(p.readout_mode):''}</h3>
+        <span class="compact muted">预期答案：${esc(p.expected??'—')}</span>
+      </div>
+      <div class="io-grid">
+        ${ioBlock('探针问题 (Probe Question)', p.question, '隔离提问', 'question-box')}
+        ${ioBlock('探针回答 (Probe Answer)', p.hypothesis, p.correct?'判定正确':'判定错误', p.correct?'answer-box':'final-answer-box')}
+      </div>`;
+    if(p.judge_raw!=null){
+      html+=`<details><summary>查看探针评分原文</summary><pre>${esc(p.judge_raw)}</pre></details>`;
+    }
+    html+='</section>';
+  }
+
+  if(isFinal && info.final_request){
+    html+=`<details><summary>查看最终问答 API 原始请求与响应</summary><pre>${esc(JSON.stringify(info.final_request,null,2))}</pre></details>`;
+  }
+  if(row){
+    html+=`<details><summary>查看此轮原始运行记录 (Turn ${t.turn_id})</summary><pre>${esc(JSON.stringify(row,null,2))}</pre></details>`;
+  }
+  html+='</article>';
+  return html;
+}
+
+function filteredTurns(q,info){
+  const turns=q.source_turns||[];
+  const kw=(state.turnSearch||'').trim().toLowerCase();
+  return turns.filter(t=>{
+    const row=observed(info,t.turn_id);
+    const ev=events(info,t.turn_id);
+    const pr=probesFor(info,t.turn_id);
+    if(state.filter==='events' && !ev.length)return false;
+    if(state.filter==='probes' && !pr.length)return false;
+    if(state.filter==='errors' && !(row && !['ok','target_unreachable','completed'].includes(row.status)))return false;
+    if(kw){
+      const outText=t.kind==='final'?(row?.answer_text??info.hypothesis):(t.output||'');
+      const hay=(`T${t.turn_id} ${t.session_id||''} ${t.input||''} ${outText||''}`).toLowerCase();
+      if(!hay.includes(kw))return false;
+    }
+    return true;
+  });
+}
+
+function drawTurnsArea(){
+  const [q,info]=activeData();
+  const filtered=filteredTurns(q,info);
+  if(!filtered.some(t=>t.turn_id===state.turn))state.turn=filtered[0]?.turn_id??null;
+
+  $('turnList').innerHTML=filtered.map(t=>{
+    const row=observed(info,t.turn_id),ev=events(info,t.turn_id),pr=probesFor(info,t.turn_id),isFinal=t.kind==='final';
+    const previewIn=(t.input||'').replace(/\s+/g,' ').slice(0,52);
+    const outRaw=isFinal?(row?.answer_text??info.hypothesis):(t.output||'');
+    const previewOut=(outRaw||'').replace(/\s+/g,' ').slice(0,48);
+    const prBadge=pr.length?badge('探 '+pr.filter(p=>p.correct).length+'/'+pr.length,pr.every(p=>p.correct)?'ok':'bad'):'';
+    return `<button class="turn-button ${state.turn===t.turn_id?'active':''} ${isFinal?'final-btn':''} ${!row?'unreached':''}" data-turn="${t.turn_id}">
+      <span class="title">
+        <b>${isFinal?'最终问答':'Turn '+t.turn_id}</b>
+        <span>${ev.length?badge(ev.length+' 维护','warn'):''}${prBadge}${!row&&!ev.length&&!pr.length?badge('未记录'):''}</span>
+      </span>
+      <small>问：${esc(previewIn||'（空）')}</small>
+      <small>答：${esc(previewOut||'（空）')}</small>
+    </button>`;
+  }).join('')||'<div class="empty">没有符合条件的轮次</div>';
+
+  $('turnList').querySelectorAll('[data-turn]').forEach(b=>{
+    b.onclick=()=>{
+      const tid=Number(b.dataset.turn);
+      state.turn=tid;
+      $('turnList').querySelectorAll('.turn-button').forEach(el=>el.classList.toggle('active',Number(el.dataset.turn)===tid));
+      if(state.viewMode==='all'){
+        const card=document.getElementById('turn-card-'+tid);
+        if(card){
+          card.scrollIntoView({behavior:'smooth',block:'start'});
+          card.classList.remove('flash');
+          void card.offsetWidth;
+          card.classList.add('flash');
+        }
+      }else{
+        renderTurnMain(filtered);
+      }
+    };
+  });
+
+  renderTurnMain(filtered);
+}
+
+function renderTurnMain(filtered){
+  const [q,info]=activeData();
+  if(state.viewMode==='all'){
+    if(!filtered.length){
+      $('turnDetail').innerHTML='<div class="empty">没有符合条件的轮次</div>';
+      return;
+    }
+    $('turnDetail').innerHTML=`<div class="timeline">${filtered.map(t=>renderTurnCard(t,info)).join('')}</div>`;
+  }else{
+    const t=filtered.find(t=>t.turn_id===state.turn);
+    if(!t){
+      $('turnDetail').innerHTML='<div class="empty">请选择一个轮次</div>';
+      return;
+    }
+    $('turnDetail').innerHTML=`<div class="timeline">${renderTurnCard(t,info)}</div>`;
+  }
+  $('turnDetail').querySelectorAll('[data-expand]').forEach(btn=>{
+    btn.onclick=()=>{
+      const textEl=btn.closest('.io').querySelector('.text');
+      const expanded=textEl.classList.toggle('expanded');
+      btn.textContent=expanded?'收起':'展开全文';
+    };
+  });
+}
+
+function drawChart(){
+  const [q,info]=activeData();
+  const ts=(info.turns||[]).filter(t=>Number.isFinite(t.context_tokens_est));
+  if(!ts.length){$('chart').innerHTML='';return}
+  const width=1000,height=104,pad=14;
+  const maxT=Math.max(...ts.map(t=>t.turn_id),1),maxY=Math.max(...ts.map(t=>t.context_tokens_est),1);
+  const x=t=>pad+(width-2*pad)*t/maxT;
+  const y=t=>height-pad-(height-2*pad)*t/maxY;
+  const pts=ts.map(t=>`${x(t.turn_id).toFixed(1)},${y(t.context_tokens_est).toFixed(1)}`);
+  const linePath='M'+pts.join(' L');
+  const areaPath=`M${x(ts[0].turn_id).toFixed(1)},${height-pad} L${pts.join(' L')} L${x(ts[ts.length-1].turn_id).toFixed(1)},${height-pad} Z`;
+  const dots=(info.events||[]).map(e=>{
+    const t=ts.find(t=>t.turn_id===e.turn_id);
+    return t?`<circle data-turn="${t.turn_id}" cx="${x(t.turn_id)}" cy="${y(t.context_tokens_est)}" r="4.5" fill="#f59e0b" stroke="#ffffff" stroke-width="1.5"><title>Turn ${t.turn_id} · ${esc(e.mechanism)}</title></circle>`:'';
+  }).join('');
+  const probeDots=(info.probes||[]).map(p=>{
+    const t=ts.find(t=>t.turn_id===p.turn_id);
+    return t?`<circle data-turn="${t.turn_id}" cx="${x(t.turn_id)}" cy="${y(t.context_tokens_est)}" r="4" fill="${p.correct?'#0d9488':'#dc2626'}" stroke="#ffffff" stroke-width="1.5"><title>Turn ${t.turn_id} · 探针 ${esc(p.probe_id||'')} (${p.correct?'正确':'错误'})</title></circle>`:'';
+  }).join('');
+
+  $('chart').innerHTML=`<div class="chart-wrap">
+    <div class="compact muted" style="display:flex;justify-content:space-between;margin-bottom:4px">
+      <span>上下文大小趋势 (est) · 黄色圆点为记忆维护，绿/红圆点为探针结果（点击可定位轮次）</span>
+      <span>峰值 <strong>${n(maxY)}</strong> tokens</span>
+    </div>
+    <svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="逐轮上下文估算 token 曲线">
+      <defs>
+        <linearGradient id="ctxArea" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#3b5bdb" stop-opacity="0.22"/>
+          <stop offset="100%" stop-color="#3b5bdb" stop-opacity="0.01"/>
+        </linearGradient>
+      </defs>
+      <path d="${areaPath}" fill="url(#ctxArea)"/>
+      <path d="${linePath}" fill="none" stroke="#3b5bdb" stroke-width="2.2" stroke-linejoin="round"/>
+      ${dots}${probeDots}
+    </svg>
+  </div>`;
+
+  $('chart').querySelectorAll('[data-turn]').forEach(b=>{
+    b.onclick=()=>{
+      const tid=Number(b.dataset.turn);
+      state.turn=tid;
+      state.filter='all';
+      $('turnFilter').value='all';
+      drawTurnsArea();
+      const card=document.getElementById('turn-card-'+tid);
+      if(card)card.scrollIntoView({behavior:'smooth',block:'start'});
+    };
+  });
+}
+
+function drawDetail(){
+  const [q,info]=activeData();
+  const totalTurns=(q.source_turns||[]).length;
+  const probes=info.probes||[];
+  const probeOk=probes.filter(p=>p.correct===true).length;
+  const firstFail=probes.find(p=>p.correct===false);
+  $('detail').innerHTML=`
+    <div class="q-banner">
+      <div class="compact muted">${esc(q.question_id)} · ${esc(q.question_type)} · 共 ${totalTurns} 轮</div>
+      <div class="question">${esc(q.question)}</div>
+      <div class="qa-summary-grid">
+        <div class="qa-box">
+          <div class="qa-box-label"><span>参考答案 (Gold Answer)</span></div>
+          <div class="qa-box-body">${esc(q.answer)}</div>
+        </div>
+        <div class="qa-box">
+          <div class="qa-box-label"><span>当前策略模型回答 (${esc(state.strategy)})</span>${label(info)}</div>
+          <div class="qa-box-body">${info.hypothesis==null?'<span class="muted">未生成回答</span>':esc(info.hypothesis)}</div>
+        </div>
+      </div>
+      <details>
+        <summary>查看评分模型判定原文 (Judge Raw)</summary>
+        <pre>${esc(info.judge_raw??'未记录评分原文')}</pre>
+      </details>
+    </div>
+
+    <div class="tabs-bar">
+      <div class="tabs" id="tabs"></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <div class="segmented" role="group" aria-label="轮次展示模式">
+          <button type="button" id="modeAll" class="${state.viewMode==='all'?'active':''}">全部轮次平铺 (${totalTurns})</button>
+          <button type="button" id="modeSingle" class="${state.viewMode==='single'?'active':''}">单轮聚焦</button>
+        </div>
+        <button type="button" id="jumpFinal" class="navbutton">跳到最终问答 ↓</button>
+      </div>
+    </div>
+
+    <div class="metric-strip">
+      ${label(info)}
+      <span>生成模型 <strong>${esc(info.generation_provider||'unknown')} / ${esc(info.generation_model||'unknown')}</strong></span>
+      <span>评分 <strong>${esc(info.judge_provider||DATA.judge_provider)}</strong></span>
+      <span>维护次数 <strong>${n(info.maintenance_events)}</strong></span>
+      ${info.evidence_eval_status?`<span>最终证据保留 <strong>${info.final_evidence_retention==null?(info.evidence_eval_status==='not_evaluable_interrupted'?'不可评估（执行中断）':'不适用'):pct(info.final_evidence_retention)}</strong></span><span>证据全齐 <strong>${info.all_evidence_retained==null?'—':(info.all_evidence_retained?'是':'否')}</strong></span>`:''}
+      <span>写入维护 <strong>${fmtMs(info.latency_ms?.maintenance)}</strong></span>
+      <span>检索组装 <strong>${fmtMs(info.latency_ms?.search)}</strong></span>
+      <span>模型回答 <strong>${fmtMs(info.latency_ms?.answer)}</strong></span>
+      <span>已记录轮次 <strong>${(info.turns||[]).length} / ${totalTurns}</strong></span>
+      ${probes.length?`<span>探针通过 <strong>${probeOk} / ${probes.length}</strong></span><span>首次观测失败 <strong>${firstFail?'Turn '+firstFail.turn_id:'已记录探针未发现失败'}</strong></span>`:'<span>首次观测失败 <strong>未测量</strong></span>'}
+    </div>
+
+    ${info.retry ? `<div class="notice">本题采用第 2 次运行。首次状态 ${esc(info.retry.first_status)}，首次评分 ${esc(String(info.retry.first_judge_label ?? "未评分"))}。补跑批次 ${esc(info.retry.batch)}</div>` : ""}
+    ${(info.warnings||[]).map(w=>'<div class="notice">'+esc(w)+'</div>').join('')}
+    <div id="chart"></div>
+
+    <div class="workspace">
+      <aside class="sidebar">
+        <div class="toolbar">
+          <b>轮次目录</b>
+          <select id="turnFilter" aria-label="筛选轮次">
+            <option value="all">全部</option>
+            <option value="events">发生维护</option>
+            <option value="probes">有探针测试</option>
+            <option value="errors">失败 / 中断</option>
+          </select>
+        </div>
+        <input id="turnSearch" type="search" placeholder="过滤轮次问题或回答…" aria-label="过滤轮次">
+        <div id="turnList" class="turn-list"></div>
+      </aside>
+      <div id="turnDetail"></div>
+    </div>`;
+
+  const tabs=$('tabs');
+  Object.keys(q.strategies).forEach(s=>{
+    const b=document.createElement('button');
+    b.textContent=s;
+    b.className=s===state.strategy?'active':'';
+    b.onclick=()=>{state.strategy=s;drawDetail()};
+    tabs.appendChild(b);
+  });
+
+  $('modeAll').onclick=()=>{state.viewMode='all';drawDetail()};
+  $('modeSingle').onclick=()=>{state.viewMode='single';drawDetail()};
+  $('jumpFinal').onclick=()=>{
+    const finalTurn=(q.source_turns||[]).find(t=>t.kind==='final');
+    if(!finalTurn)return;
+    state.turn=finalTurn.turn_id;
+    state.filter='all';
+    state.turnSearch='';
+    $('turnFilter').value='all';
+    $('turnSearch').value='';
+    drawTurnsArea();
+    const card=document.getElementById('turn-card-'+finalTurn.turn_id);
+    if(card)card.scrollIntoView({behavior:'smooth',block:'start'});
+  };
+
+  $('turnFilter').value=state.filter;
+  $('turnFilter').onchange=()=>{state.filter=$('turnFilter').value;drawTurnsArea()};
+  $('turnSearch').value=state.turnSearch;
+  $('turnSearch').oninput=()=>{state.turnSearch=$('turnSearch').value;drawTurnsArea()};
+
+  drawChart();
+  drawTurnsArea();
+}
+
+drawMatrix();
+if(DATA.questions.length)selectQuestion(DATA.questions[0].question_id);
+</script>
+</body>
+</html>

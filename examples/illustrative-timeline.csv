@@ -1,0 +1,7 @@
+data_kind,turn_id,event,expected_owner,visible_owner,answer,correct,lexical_jaccard,failure
+synthetic_illustration,1,write,林,林,林,1,,
+synthetic_illustration,2,distractor,林,林,林,1,,
+synthetic_illustration,3,update,周,周,周,1,,
+synthetic_illustration,4,compact,周,林,林,0,0.93,first_stale_answer
+synthetic_illustration,5,distractor,周,林,林,0,,stale_answer
+synthetic_illustration,6,compact,周,林,林,0,0.98,sustained_failure_confirmed_onset_4

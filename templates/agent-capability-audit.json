@@ -1,0 +1,24 @@
+{
+  "schema_version": "0.2",
+  "record_type": "template",
+  "agent": null,
+  "version": null,
+  "entrypoint": null,
+  "native_profile_id": null,
+  "ingestion_activation": null,
+  "capabilities": [
+    {
+      "mechanism": null,
+      "configured_state": null,
+      "effective_state": null,
+      "controllability": null,
+      "observability": null,
+      "validation_case": null,
+      "evidence_refs": [],
+      "activation_state": null,
+      "disable_path_evidence": []
+    }
+  ],
+  "orchestration_profile_id": null,
+  "identity_control_evidence": []
+}

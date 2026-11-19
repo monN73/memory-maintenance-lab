@@ -1,0 +1,22 @@
+{
+  "schema_version": "0.2",
+  "record_type": "template",
+  "scenario_id": null,
+  "version": null,
+  "input_ref": null,
+  "annotation_ref": null,
+  "language": null,
+  "memory_operations": [],
+  "target_history_tokens": null,
+  "session_count": null,
+  "distractor_ratio": null,
+  "generator_version": null,
+  "seed": null,
+  "history_group_id": null,
+  "intended_split": null,
+  "time_order_policy": null,
+  "annotation_author": null,
+  "annotation_review": null,
+  "eligible_probe_ranges": [],
+  "data_sha256": null
+}

@@ -1,0 +1,124 @@
+{
+  "schema_version": "0.2",
+  "status": "design_only",
+  "config_id": "pilot-v5-final-review",
+  "seed": 42,
+  "tracks": {
+    "direct": [
+      "N0",
+      "N1",
+      "N2",
+      "N3",
+      "N4"
+    ],
+    "hermes": []
+  },
+  "model": {
+    "answer": "deepseek-flash",
+    "compaction": "deepseek-flash",
+    "provider": "deepseek",
+    "temperature": 0,
+    "seed_if_supported": 42,
+    "tokenizer": "approx-utf8-v1"
+  },
+  "budget": {
+    "input_tokens": 8192,
+    "max_output_tokens": 512,
+    "memory_tokens": 2048,
+    "recent_history_tokens": 4096,
+    "trigger_ratio": 0.8,
+    "target_ratio": 0.6,
+    "executor_version": "budget-executor-v3-full-context-llm",
+    "maintenance_input_limit": null,
+    "maintenance_output_limit": 4096,
+    "max_maintenance_calls_per_turn": 2,
+    "evaluation_input_limit": null,
+    "target_unreachable_policy": "allow_only_if_total_within_input_limit",
+    "overflow_policy": "stop_no_silent_truncation",
+    "allocation_policy": "reserve_memory_then_recent_exchanges_v1",
+    "zero_memory_budget_policy": "evict_memory_without_model_call",
+    "n1_context_tokens": null,
+    "n4_target_ratio": 0.65,
+    "n4_retry_ratio": 0.4,
+    "n4_output_tokens": 4096
+  },
+  "evaluation": {
+    "probe_mode": "isolated_state_copy_trace_only",
+    "probe_every_n_turns": null,
+    "sustained_failure_observations": 3,
+    "judge_model": "deepseek-flash",
+    "trace_checkpoints": [
+      "session_end",
+      "before_maintenance",
+      "after_maintenance"
+    ],
+    "eligibility_required": true,
+    "trace_readout_mode": "snapshot_readout",
+    "probe_overflow_policy": "record_unscorable_no_truncation"
+  },
+  "pilot": {
+    "question_count": 30,
+    "strategies": 5,
+    "repeats": 1,
+    "planned_runs": 150,
+    "trace_annotated_subset_size": 10,
+    "scope": "direct_smoke_presets_only"
+  },
+  "hermes": {
+    "repository": "https://github.com/NousResearch/hermes-agent",
+    "commit": null,
+    "entrypoint": null,
+    "verified_effective_config": null
+  },
+  "retry": {
+    "max_attempts": 2,
+    "strategy_fallback": false
+  },
+  "notes": [
+    "自定义实验配置，不能直接用于 Hermes。",
+    "模型、tokenizer、Hermes commit 等 null 字段需在运行前填写并校验。",
+    "本文件没有可执行 runner；所有阈值为计划默认值。",
+    "设计配置不由 runner 自动加载；实际参数以 CLI 和 manifest 为准。N1 容量须核实后显式提供。"
+  ],
+  "dataset": {
+    "name": "LongMemEval",
+    "release": "cleaned",
+    "variant": "S",
+    "filename": "longmemeval_s_cleaned.json",
+    "revision": "98d7416c24c778c2fee6e6f3006e7a073259d48f",
+    "sha256": "d6f21ea9d60a0d56f34a05b609c79c88a451d2ae03597821ea3d5a9678c3a442",
+    "subset_manifest": "data/manifests/s-dev-30.json",
+    "subset_size": 30,
+    "protocol": "benchmark_final",
+    "ingestion_mode": "fixed_history",
+    "session_policy": "continuous",
+    "evaluator_commit": "9e0b455f4ef0e2ab8f2e582289761153549043fc"
+  },
+  "strategy_registry": "strategy-registry.json",
+  "agent_interaction_design": {
+    "status": "pending_capability_audit",
+    "cell_manifest": "experiment-cells.json",
+    "target_native_mechanism": null,
+    "planned_runs": null,
+    "required_cells": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "notes": "原 pilot 的 150 run 仅为 direct 起步批次；交互实验另按有效 cell manifest 计算。"
+  },
+  "protocol_version": "0.3",
+  "cell_manifest": "experiment-cells.json",
+  "orchestration_registry": "orchestration-registry.json",
+  "statistics": {
+    "phase": "development",
+    "smoke_repeats": 1,
+    "confirmatory_repeats": null,
+    "suggested_initial_confirmatory_repeats": 3,
+    "bootstrap_resamples": 2000,
+    "bootstrap_seed": 42,
+    "cluster_unit": "history_group_id_else_question_id",
+    "confidence_level": 0.95
+  }
+}

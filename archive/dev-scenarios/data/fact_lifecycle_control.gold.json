@@ -1,0 +1,294 @@
+{
+  "fact-ctrl-01-update": {
+    "checkpoints": [
+      {
+        "name": "old_in_m",
+        "turn_id": 22,
+        "facts": [
+          [
+            "杉木项目",
+            "负责人",
+            "林",
+            "active"
+          ],
+          [
+            "杉木项目",
+            "代号",
+            "SQ-741",
+            "active"
+          ],
+          [
+            "海盐项目",
+            "负责人",
+            "吴",
+            "active"
+          ]
+        ]
+      },
+      {
+        "name": "updated_in_m",
+        "turn_id": 45,
+        "facts": [
+          [
+            "杉木项目",
+            "负责人",
+            "周",
+            "active"
+          ],
+          [
+            "杉木项目",
+            "代号",
+            "SQ-741",
+            "active"
+          ],
+          [
+            "海盐项目",
+            "负责人",
+            "吴",
+            "active"
+          ]
+        ]
+      },
+      {
+        "name": "final_after_pressure",
+        "turn_id": 50,
+        "facts": [
+          [
+            "杉木项目",
+            "负责人",
+            "周",
+            "active"
+          ],
+          [
+            "杉木项目",
+            "代号",
+            "SQ-741",
+            "active"
+          ],
+          [
+            "海盐项目",
+            "负责人",
+            "吴",
+            "active"
+          ]
+        ]
+      }
+    ]
+  },
+  "fact-ctrl-02-retract-restore": {
+    "checkpoints": [
+      {
+        "name": "old_in_m",
+        "turn_id": 22,
+        "facts": [
+          [
+            "云杉系统",
+            "缓存",
+            "Redis-7",
+            "active"
+          ],
+          [
+            "云杉系统",
+            "主库",
+            "PostgreSQL-14",
+            "active"
+          ],
+          [
+            "松果系统",
+            "主库",
+            "MySQL-8",
+            "active"
+          ]
+        ]
+      },
+      {
+        "name": "retracted_in_m",
+        "turn_id": 45,
+        "facts": [
+          [
+            "云杉系统",
+            "缓存",
+            "[RETRACTED]",
+            "retracted"
+          ],
+          [
+            "云杉系统",
+            "主库",
+            "PostgreSQL-14",
+            "active"
+          ],
+          [
+            "松果系统",
+            "主库",
+            "MySQL-8",
+            "active"
+          ]
+        ]
+      },
+      {
+        "name": "restored_in_m",
+        "turn_id": 70,
+        "facts": [
+          [
+            "云杉系统",
+            "缓存",
+            "Valkey-8",
+            "active"
+          ],
+          [
+            "云杉系统",
+            "主库",
+            "PostgreSQL-14",
+            "active"
+          ],
+          [
+            "松果系统",
+            "主库",
+            "MySQL-8",
+            "active"
+          ]
+        ]
+      }
+    ]
+  },
+  "fact-ctrl-03-capacity-pressure": {
+    "checkpoints": [
+      {
+        "name": "early_in_m",
+        "turn_id": 38,
+        "facts": [
+          [
+            "极光计划",
+            "暗号",
+            "Alpha-99",
+            "active"
+          ],
+          [
+            "星辰计划",
+            "等级",
+            "P2",
+            "active"
+          ]
+        ]
+      },
+      {
+        "name": "mid_pressure",
+        "turn_id": 55,
+        "facts": [
+          [
+            "极光计划",
+            "暗号",
+            "Alpha-99",
+            "active"
+          ],
+          [
+            "星辰计划",
+            "等级",
+            "P2",
+            "active"
+          ]
+        ]
+      },
+      {
+        "name": "final_after_pressure",
+        "turn_id": 90,
+        "facts": [
+          [
+            "极光计划",
+            "暗号",
+            "Alpha-99",
+            "active"
+          ],
+          [
+            "极光计划",
+            "巡检状态",
+            "第65阶段正常运转中",
+            "active"
+          ],
+          [
+            "星辰计划",
+            "等级",
+            "P2",
+            "active"
+          ]
+        ]
+      }
+    ]
+  },
+  "fact-ctrl-04-en-update-retract": {
+    "checkpoints": [
+      {
+        "name": "old_in_m",
+        "turn_id": 22,
+        "facts": [
+          [
+            "user",
+            "office_city",
+            "Seattle",
+            "active"
+          ],
+          [
+            "user",
+            "project_lead",
+            "Alice",
+            "active"
+          ],
+          [
+            "user",
+            "backup_phone",
+            "555-0199",
+            "active"
+          ]
+        ]
+      },
+      {
+        "name": "updated_in_m",
+        "turn_id": 45,
+        "facts": [
+          [
+            "user",
+            "office_city",
+            "Austin",
+            "active"
+          ],
+          [
+            "user",
+            "backup_phone",
+            "[RETRACTED]",
+            "retracted"
+          ],
+          [
+            "user",
+            "project_lead",
+            "Alice",
+            "active"
+          ]
+        ]
+      },
+      {
+        "name": "final_after_pressure",
+        "turn_id": 50,
+        "facts": [
+          [
+            "user",
+            "office_city",
+            "Austin",
+            "active"
+          ],
+          [
+            "user",
+            "backup_phone",
+            "[RETRACTED]",
+            "retracted"
+          ],
+          [
+            "user",
+            "project_lead",
+            "Alice",
+            "active"
+          ]
+        ]
+      }
+    ]
+  }
+}

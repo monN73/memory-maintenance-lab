@@ -1,0 +1,24 @@
+{
+  "purpose": "development archive; excluded from new baseline",
+  "batches": {
+    "runs": [
+      "runs/deepseek-flash/direct-dev-30--deepseek--20261116T221100981584+0800",
+      "runs/deepseek-flash/n4-oracle-v2--deepseek--20261117T144503932357+0800",
+      "runs/deepseek-flash/smoke-oracle-5--deepseek--20261116T215645680851+0800",
+      "runs/deepseek-flash/smoke-revision--deepseek--20261116T215159170719+0800",
+      "runs/deepseek-flash/smoke-revision-v2--deepseek--20261116T220616952651+0800",
+      "runs/ecnu-plus/ecnu-oracle-5-every-turn--ecnu--20261117T160432928803+0800",
+      "runs/ecnu-plus/ecnu-oracle-5-probe--ecnu--20261117T155452670423+0800",
+      "runs/ecnu-plus/longmemeval-oracle-5--ecnu--20261117T162829240955+0800",
+      "runs/ecnu-plus/longmemeval-s-dev-30--ecnu--20261117T201120988995+0800",
+      "runs/ecnu-plus/longmemeval-s-dev-30-n4fix--ecnu--20261117T214437371396+0800"
+    ],
+    "reports": [
+      "reports/deepseek-flash/direct-dev-30--deepseek--20261116T221100981584+0800",
+      "reports/deepseek-flash/smoke-oracle-5--deepseek--20261116T215645680851+0800",
+      "reports/ecnu-plus/ecnu-oracle-5-every-turn--ecnu--20261117T160432928803+0800",
+      "reports/ecnu-plus/ecnu-oracle-5-probe--ecnu--20261117T155452670423+0800",
+      "reports/ecnu-plus/longmemeval-oracle-5--ecnu--20261117T162829240955+0800"
+    ]
+  }
+}

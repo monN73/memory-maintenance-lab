@@ -1,0 +1,71 @@
+{
+  "dataset": "LongMemEval",
+  "dataset_revision": "98d7416c24c778c2fee6e6f3006e7a073259d48f",
+  "variant": "s_cleaned_knowledge_update_10",
+  "source_sha256": "d6f21ea9d60a0d56f34a05b609c79c88a451d2ae03597821ea3d5a9678c3a442",
+  "selection_rule": "Evenly spaced 10 items (step=7) from all 78 knowledge-update items, frozen before extractor inspection.",
+  "question_ids": [
+    "6a1eabeb",
+    "89941a93",
+    "4d6b87c8",
+    "45dc21b6",
+    "01493427",
+    "1cea1afa",
+    "7e974930",
+    "e66b632c",
+    "cf22b7bf",
+    "dad224aa"
+  ],
+  "items_meta": [
+    {
+      "question_id": "6a1eabeb",
+      "total_sessions": 40,
+      "answer_session_count": 2
+    },
+    {
+      "question_id": "89941a93",
+      "total_sessions": 51,
+      "answer_session_count": 2
+    },
+    {
+      "question_id": "4d6b87c8",
+      "total_sessions": 52,
+      "answer_session_count": 2
+    },
+    {
+      "question_id": "45dc21b6",
+      "total_sessions": 49,
+      "answer_session_count": 2
+    },
+    {
+      "question_id": "01493427",
+      "total_sessions": 47,
+      "answer_session_count": 2
+    },
+    {
+      "question_id": "1cea1afa",
+      "total_sessions": 49,
+      "answer_session_count": 2
+    },
+    {
+      "question_id": "7e974930",
+      "total_sessions": 47,
+      "answer_session_count": 2
+    },
+    {
+      "question_id": "e66b632c",
+      "total_sessions": 47,
+      "answer_session_count": 2
+    },
+    {
+      "question_id": "cf22b7bf",
+      "total_sessions": 55,
+      "answer_session_count": 2
+    },
+    {
+      "question_id": "dad224aa",
+      "total_sessions": 48,
+      "answer_session_count": 2
+    }
+  ]
+}

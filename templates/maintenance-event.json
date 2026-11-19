@@ -1,0 +1,33 @@
+{
+  "schema_version": "0.2",
+  "record_type": "template",
+  "event_id": null,
+  "run_id": null,
+  "turn_id": null,
+  "owner": null,
+  "mechanism": null,
+  "phase": null,
+  "trigger": null,
+  "parent_event_ids": [],
+  "input_snapshots": [],
+  "output_snapshots": [],
+  "input_hashes": [],
+  "output_hashes": [],
+  "source_ids": [],
+  "request_ids": [],
+  "input_tokens": null,
+  "output_tokens": null,
+  "latency_ms": null,
+  "effective_config_hash": null,
+  "status": null,
+  "orchestration_profile_id": null,
+  "branch_id": null,
+  "metrics": {
+    "lexical_jaccard": null,
+    "lexical_retention": null,
+    "compression_ratio": null
+  },
+  "metric_null_reasons": {},
+  "memory_scope": null,
+  "injection_slot": null
+}

@@ -1,0 +1,72 @@
+{
+  "schema_version": "0.2",
+  "status": "design_only",
+  "profiles": [
+    {
+      "orchestration_profile_id": "direct-runner",
+      "status": "proposed",
+      "integration_surface": "direct_runner",
+      "execution_order": [
+        "external",
+        "answer"
+      ],
+      "identity_control_required": true,
+      "identity_control_verified": false,
+      "hook_phase": null,
+      "injection_slot": null,
+      "injection_role": null,
+      "injection_position": null,
+      "native_can_reprocess": null,
+      "session_policy": "continuous",
+      "history_access_policy": "cell_defined",
+      "snapshot_isolation": null,
+      "wrapper_prompt_hash": null,
+      "implementation_hash": null
+    },
+    {
+      "orchestration_profile_id": "hermes-controlled-hook",
+      "status": "proposed",
+      "integration_surface": "context_engine_hook",
+      "execution_order": [
+        "external",
+        "native",
+        "answer"
+      ],
+      "identity_control_required": true,
+      "identity_control_verified": false,
+      "hook_phase": null,
+      "injection_slot": null,
+      "injection_role": null,
+      "injection_position": null,
+      "native_can_reprocess": null,
+      "session_policy": "continuous",
+      "history_access_policy": "cell_defined",
+      "snapshot_isolation": null,
+      "wrapper_prompt_hash": null,
+      "implementation_hash": null
+    },
+    {
+      "orchestration_profile_id": "hermes-wrapped-history",
+      "status": "proposed",
+      "integration_surface": "wrapped_history",
+      "execution_order": [
+        "wrapper",
+        "external",
+        "native",
+        "answer"
+      ],
+      "identity_control_required": true,
+      "identity_control_verified": false,
+      "hook_phase": null,
+      "injection_slot": null,
+      "injection_role": null,
+      "injection_position": null,
+      "native_can_reprocess": null,
+      "session_policy": "continuous",
+      "history_access_policy": "cell_defined",
+      "snapshot_isolation": null,
+      "wrapper_prompt_hash": null,
+      "implementation_hash": null
+    }
+  ]
+}
