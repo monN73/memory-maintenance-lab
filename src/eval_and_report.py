@@ -364,6 +364,50 @@ def audit_n4_question(
     return out_rows
 
 
+def _partition_cached_evals(
+    existing_evals: list[dict[str, Any]],
+    preds: list[dict[str, Any]],
+    judge_provider: str,
+    judge_model: str,
+    endpoint_hash: str | None,
+    offline: bool,
+    retry_judge_errors: bool,
+) -> tuple[dict[str, dict[str, Any]], list[dict[str, Any]]]:
+    """Return reusable cached judgments and predictions that still require scoring."""
+    pred_by_q = {p["question_id"]: p for p in preds}
+    existing_by_q = {e["question_id"]: e for e in existing_evals}
+
+    def _cache_matches(e: dict[str, Any]) -> bool:
+        qid = e["question_id"]
+        return (
+            qid in pred_by_q
+            and e.get("judge_provider") == judge_provider
+            and e.get("judge_model", judge_model) == judge_model
+            and (offline or e.get("judge_endpoint_hash") == endpoint_hash)
+            and e.get("hypothesis") == pred_by_q[qid].get("hypothesis")
+            and e.get("status") == pred_by_q[qid].get("status")
+        )
+
+    if retry_judge_errors:
+        reusable: dict[str, dict[str, Any]] = {}
+        for qid, e in existing_by_q.items():
+            jst = e.get("judge_status")
+            is_terminal_skip = jst == "skipped_no_prediction" and (
+                e.get("status") != "completed" or not (e.get("hypothesis") or "").strip()
+            )
+            if _cache_matches(e) and (jst == "ok" or is_terminal_skip):
+                reusable[qid] = e
+        return reusable, [p for p in preds if p["question_id"] not in reusable]
+
+    if (
+        len(existing_evals) == len(preds)
+        and set(existing_by_q) == set(pred_by_q)
+        and all(_cache_matches(e) for e in existing_evals)
+    ):
+        return existing_by_q, []
+    return {}, list(preds)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate predictions and generate report")
     mode = parser.add_mutually_exclusive_group()
@@ -378,9 +422,16 @@ def main() -> None:
     parser.add_argument("--judge-model", default=None, help="Judge model ID; defaults to the selected provider model")
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--audit-n4", action="store_true", help="Run LLM semantic maintenance-quality audit for N4 (cached in audit_N4.jsonl)")
+    parser.add_argument(
+        "--retry-judge-errors",
+        action="store_true",
+        help="Reuse valid cached judgments and re-score only rows with judge errors",
+    )
     args = parser.parse_args()
     if args.unscored:
         args.offline = True
+    if args.retry_judge_errors and args.offline:
+        raise SystemExit("--retry-judge-errors cannot be combined with --offline or --unscored.")
 
     args.judge_model = args.judge_model or DEFAULT_MODELS[args.provider]
     runs_root = ROOT / "runs"
@@ -573,34 +624,34 @@ def main() -> None:
 
         eval_out = report_dir / f"eval_{st}.jsonl"
         judge_results: dict[str, dict[str, Any]] = {}
-        reused = False
+        pending_preds: list[dict[str, Any]] = list(preds)
         if args.unscored:
             judge_results = {
                 p["question_id"]: {"judge_status": "not_scored", "judge_label": None}
                 for p in preds
             }
-            reused = True
+            pending_preds = []
         elif eval_out.exists():
             with eval_out.open("r", encoding="utf-8") as f:
                 existing_evals = [json.loads(line) for line in f if line.strip()]
-            if (len(existing_evals) == len(preds)
-                and {e["question_id"] for e in existing_evals} == set(pred_by_q)
-                and all((e.get("judge_provider") == args.provider)
-                        and (e.get("judge_model", args.judge_model) == args.judge_model)
-                        and (args.offline or e.get("judge_endpoint_hash") == client.endpoint_hash)
-                        and e.get("hypothesis") == pred_by_q[e["question_id"]].get("hypothesis")
-                        and e.get("status") == pred_by_q[e["question_id"]].get("status")
-                        for e in existing_evals)):
-                judge_results = {e["question_id"]: e for e in existing_evals}
-                reused = True
+            judge_results, pending_preds = _partition_cached_evals(
+                existing_evals,
+                preds,
+                args.provider,
+                args.judge_model,
+                client.endpoint_hash if client else None,
+                args.offline,
+                args.retry_judge_errors,
+            )
 
-        if not reused and args.offline:
+        if pending_preds and args.offline:
             raise SystemExit(f"Offline rebuild needs matching saved evaluations: {eval_out}")
-        if not reused:
+        if pending_preds:
+            print(f"[{st}] Judging {len(pending_preds)}/{len(preds)} predictions...", flush=True)
             with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as ex:
                 futs = [
                     ex.submit(judge_one, client, args.judge_model, refs[p["question_id"]], p)
-                    for p in preds
+                    for p in pending_preds
                 ]
                 for fut in concurrent.futures.as_completed(futs):
                     jr = fut.result()
@@ -609,7 +660,11 @@ def main() -> None:
             # Write eval results JSONL
             with eval_out.open("w", encoding="utf-8") as f:
                 for p in preds:
-                    jr = judge_results[p["question_id"]] | {"judge_provider": args.provider, "judge_model": args.judge_model, "judge_endpoint_hash": client.endpoint_hash}
+                    jr = judge_results[p["question_id"]] | {
+                        "judge_provider": args.provider,
+                        "judge_model": args.judge_model,
+                        "judge_endpoint_hash": client.endpoint_hash,
+                    }
                     f.write(json.dumps(p | jr, ensure_ascii=False) + "\n")
 
         planned = len(runs_list)
@@ -906,6 +961,7 @@ def main() -> None:
     summary_obj = {
         "batch_id": args.batch_id,
         "source_batch": batch_dir.name,
+        **({"source_batches": batch_summary["source_batches"]} if "source_batches" in batch_summary else {}),
         "dataset": dataset_meta,
         "generation_providers": sorted({r["generation_provider"] or "unknown" for r in all_rows}),
         "judge_provider": args.provider,

@@ -107,13 +107,16 @@ N 系列进行固定历史回放；Hermes 需实现固定消息导入/摄入，�
 
 ### 离线证据轨迹与快照重放口径（`export_evidence_trajectory.py` & `probe_from_snapshots.py`）
 
-为保证 LongMemEval 过程追踪与重放验证的无偏与可复现，离线脚本严格执行以下五项口径：
+为保证 LongMemEval 过程追踪与重放验证的无偏与可复现，离线脚本严格执行以下八项口径：
 
 1. **双证据层与双分母分离**：`has_answer` 用于消息级证据单元定位（映射到 exchange 时保留 `source_message_indices`）；`answer_session_ids` 为更粗的会话级代理。两者在 `evidence_trajectory.md/.json` 中分列、分别计算分母；当某题缺少消息级 `has_answer` 标注时显式记为 `missing`，绝不静默回退成整个 `answer_session_ids`。
 2. **三层独立追踪与 `N11` 去重区分**：分别检查**近期窗口（`recent_window`）**、**外部存储（`external_storage`）**、**探针读出（`probe_readout`）**。`N11` 发生精确去重时，同步区分支源轮次（`source_turn_id`）保留与规范化正文内容保留（记录实际承载轮次 `via_turn_id` 与时间戳 `timestamp`）。
 3. **严格区间与事件归因边界**：`observed_loss_interval` 固定报告 `(last_observed_retained_turn, first_observed_missing_turn]`。`N7/N8/N11/N12/N13` 的窗口淘汰（`evicted_turn_ids`）仅代表证据迁入归档，只有对应存储层的淘汰事件（如 `archive_evicted_turn_ids` 或 `[T<id>]` 从 `M` 消失）才构成该层遗失归因；区间无匹配事件记 `unattributed_in_interval`，多事件记 `ambiguous_multiple_events`，`N4/N6` 改写记 `uncertain_llm_paraphrase`（不确定从缺失推断遗忘）。
 4. **快照重放权限与一致校验**：重放权限表包含 `N5`；`N0–N6`、`N9–N10`、`N14` 严禁读取历史原文归档，`N7/N8/N11/N12/N13` 仅允许读取快照冻结的 `archived_turn_ids` 白名单（越界则报错），`N13` 同时恢复 `memory_text` 事实表与 `archived_turn_ids` 白名单。在线与事后 probe 共用 `build_readout_memory` 与 `build_messages`，`--verify-only` 逐条核对 `retrieved_turn_ids`、`memory_text_injected` 与规范化请求哈希 `request_sha256`（验证模型收到**完全相同输入**）。
 5. **开发暴露样本说明**：`s-ku-10` 中的 `01493427` 与 `45dc21b6` 用于链路重放验证及 `N14` 前端提取规则检查，报告与统计分析时单列标明为公开切片内的开发暴露样本。
+6. **本轮跳过维护的对照读出（Skip-Maintenance Counterfactual Readout）**：鉴于 `runner.py` 先将旧状态与本轮完整对话传入维护函数、成功后才追加本轮原文并落盘轮末快照，仅当采用 `turn_{t-1}.json` 状态拼入本轮完整 `ex_t`（校验符合该策略 manifest 有效预算 `B`）构造 **“本轮跳过维护的对照读出”**，并与 `turn_t.json` 在相同问题、日期、模型、生成参数与读出规则下对比时，方可表述为“**同轮配对重放中，跳过维护时答对，按原维护结果读出时答错**”；若跳过维护态超限或无法精确恢复，仍展示相邻快照变化与维护事件，表述收束为“同轮发生维护与读出转错”。
+7. **探针复用全要素核验与复测波动分型**：复用历史探针记录时，除核对来源批次、题号、策略、轮次、参考答案与 `request_sha256` 外，还必须核对回答模型/提供商、生成参数（`temperature/max_tokens/seed/thinking`）、裁判模型/提示口径以及 `correct` 严格为布尔值；缺少 `request_sha256` 的早期在线探针仅作历史观测保留，不替代主配对格。`--recheck` 复测写为独立记录且保留首次答案：两次模型回答文本一致但裁判布尔结论相反记为 **`scoring_inconsistent`（评分不一致）**；回答内容一次正确一次错误且经裁判复核确认后记为 **`readout_instability`（读出不稳定）**。
+8. **完整计数分母、三类缺口与跨缺口邻接转错区间**：全集转错统计以完整计数表达（如“30 题中，`N` 题至少 2 次有效观测、`M` 题观察到由对转错；共触发 `P` 次探针、`Q` 次有效评分”）。缺失轮次严格分为 `termination_turn_no_snapshot`、`post_termination`、`unexpected_missing` 与运行调用缺口 `api_error_gap`（429/超时不计入答错）。单题内的转错区间按**同一有效答案区间内、按轮号排序的相邻有效观测**界定为 `(last_ok_turn_before_regression, first_regression_turn]`：若中间轮次（如 `T101`）为 `api_error_gap`，则保留该缺口并报告 `(T100, T102]`。
 
 ### 现有报告：遗漏、新增、旧值与失败分类
 

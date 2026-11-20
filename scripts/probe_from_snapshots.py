@@ -28,7 +28,7 @@ from budget_executor import (  # noqa: E402
 )
 from dataset_adapters import UnifiedProbe, adapt_longmemeval_item, align_longmemeval_turns  # noqa: E402
 from llm_client import DEFAULT_MODELS, LLMClient  # noqa: E402
-from metrics import sha256_json  # noqa: E402
+from metrics import estimate_messages_tokens, sha256_json  # noqa: E402
 from runner import SYSTEM_PROMPT_LONGMEMEVAL, run_isolated_probe  # noqa: E402
 
 NO_ARCHIVE_ACCESS_STRATEGIES = set(STRATEGIES) - set(ARCHIVE_STRATEGIES)
@@ -94,8 +94,50 @@ def reconstruct_probe_inputs(
         "retrieved_turn_ids": retrieved_ids,
         "archived_turn_ids": [ex.turn_id for ex in archived_whitelist] if archived_whitelist is not None else [],
         "messages": msgs,
+        "estimated_tokens": estimate_messages_tokens(msgs),
         "request_sha256": sha256_json(msgs),
     }
+
+
+def reconstruct_skip_maintenance_inputs(
+    strategy: str,
+    prev_snap: dict[str, Any],
+    current_exchange: Exchange,
+    question: str,
+    question_date: str | None,
+    budget: BudgetConfig,
+    all_exchanges_by_tid: dict[int, Exchange] | None = None,
+) -> dict[str, Any]:
+    """Reconstruct intra-turn skip-maintenance counterfactual state from turn_{t-1} + ex_t."""
+    prev_kept = list(prev_snap.get("kept_exchanges", []))
+    combined_kept = prev_kept + [
+        {
+            "turn_id": current_exchange.turn_id,
+            "session_id": current_exchange.session_id,
+            "timestamp": current_exchange.timestamp,
+            "user_text": current_exchange.user_text,
+            "assistant_text": current_exchange.assistant_text,
+        }
+    ]
+    synthetic_snap = {
+        "turn_id": current_exchange.turn_id,
+        "session_id": current_exchange.session_id,
+        "memory_text": prev_snap.get("memory_text") or "",
+        "archived_turn_ids": prev_snap.get("archived_turn_ids") or [],
+        "kept_exchanges": combined_kept,
+    }
+    rec = reconstruct_probe_inputs(
+        strategy=strategy,
+        snap=synthetic_snap,
+        question=question,
+        question_date=question_date,
+        budget=budget,
+        all_exchanges_by_tid=all_exchanges_by_tid,
+    )
+    cap = (budget.n1_context_tokens - budget.max_output_tokens) if strategy in ("N1", "N5") and budget.n1_context_tokens else budget.input_tokens
+    rec["fits_budget"] = rec["estimated_tokens"] <= cap
+    rec["budget_cap_tokens"] = cap
+    return rec
 
 
 def verify_run_against_online(

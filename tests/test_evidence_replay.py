@@ -101,6 +101,70 @@ class EvidenceReplayTests(unittest.TestCase):
             ev = res["events"][0]
             self.assertTrue(ev.get("archive_evicted_turn_ids"), f"{strat} should log archive_evicted_turn_ids")
 
+    def test_retry_judge_errors_reuses_valid_and_skips_errors(self):
+        from eval_and_report import _partition_cached_evals
+        preds = [
+            {"question_id": "q1", "hypothesis": "yes", "status": "completed"},
+            {"question_id": "q2", "hypothesis": "ans", "status": "completed"},
+            {"question_id": "q3", "hypothesis": "", "status": "overflow"},
+        ]
+        existing = [
+            {"question_id": "q1", "hypothesis": "yes", "status": "completed", "judge_provider": "ecnu", "judge_model": "ecnu-plus", "judge_endpoint_hash": "h1", "judge_status": "ok", "judge_label": True},
+            {"question_id": "q2", "hypothesis": "ans", "status": "completed", "judge_provider": "ecnu", "judge_model": "ecnu-plus", "judge_endpoint_hash": "h1", "judge_status": "judge_error: HTTP 429", "judge_label": None},
+            {"question_id": "q3", "hypothesis": "", "status": "overflow", "judge_provider": "ecnu", "judge_model": "ecnu-plus", "judge_endpoint_hash": "h1", "judge_status": "skipped_no_prediction", "judge_label": None},
+        ]
+        reusable, pending = _partition_cached_evals(existing, preds, "ecnu", "ecnu-plus", "h1", False, True)
+        self.assertEqual(sorted(reusable.keys()), ["q1", "q3"])
+        self.assertEqual([p["question_id"] for p in pending], ["q2"])
+
+    def test_probe_plan_reuse_verification_and_gap_classification(self):
+        from run_probe_plan import _classify_missing_snapshot, _classify_recheck, compute_regression_intervals, verify_saved_record
+        plan = {"provider": "ecnu", "model": "ecnu-plus", "judge_provider": "ecnu", "judge_model": "ecnu-plus"}
+        good = {
+            "source_batch": "b1", "question_id": "q1", "strategy": "N9", "turn_id": 10,
+            "request_sha256": "abc", "expected": "42", "provider": "ecnu", "model": "ecnu-plus",
+            "judge_provider": "ecnu", "judge_model": "ecnu-plus", "correct": True, "status": "ok",
+        }
+        self.assertEqual(verify_saved_record(good, source_batch="b1", qid="q1", strategy="N9", turn=10, request_sha256="abc", expected="42", plan=plan)[0], "reusable_ok")
+        self.assertEqual(verify_saved_record(good | {"correct": None}, source_batch="b1", qid="q1", strategy="N9", turn=10, request_sha256="abc", expected="42", plan=plan)[0], "mismatch_error")
+        self.assertEqual(verify_saved_record(good | {"judge_model": "other"}, source_batch="b1", qid="q1", strategy="N9", turn=10, request_sha256="abc", expected="42", plan=plan)[0], "mismatch_error")
+        self.assertEqual(verify_saved_record(good | {"status": "api_error_gap", "correct": None}, source_batch="b1", qid="q1", strategy="N9", turn=10, request_sha256="abc", expected="42", plan=plan)[0], "pending_new")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            rd = Path(tmp)
+            (rd / "snapshots").mkdir()
+            (rd / "snapshots" / "turn_009.json").write_text("{}")
+            (rd / "manifest.json").write_text(json.dumps({"status": "overflow", "termination_reason": "overflow"}))
+            (rd / "turns.jsonl").write_text(json.dumps({"turn_id": 10}) + "\n")
+            self.assertEqual(_classify_missing_snapshot(rd, 10)["gap_type"], "termination_turn_no_snapshot")
+            self.assertEqual(_classify_missing_snapshot(rd, 11)["gap_type"], "post_termination")
+            self.assertEqual(_classify_missing_snapshot(rd, 8)["gap_type"], "unexpected_missing")
+
+        reg = compute_regression_intervals([
+            {"turn_id": 10, "correct": False, "status": "ok"},
+            {"turn_id": 20, "correct": True, "status": "ok"},
+            {"turn_id": 21, "correct": None, "status": "api_error_gap"},
+            {"turn_id": 30, "correct": False, "status": "ok"},
+        ])
+        self.assertEqual(reg["first_observed_error_turn"], 10)
+        self.assertEqual(reg["last_ok_turn_before_regression"], 20)
+        self.assertEqual(reg["first_regression_turn"], 30)
+        self.assertEqual(reg["regression_interval"], "(T20, T30]")
+        self.assertEqual(reg["bridged_api_error_gaps"], [21])
+
+        self.assertEqual(_classify_recheck({"hypothesis": "25", "correct": True}, {"hypothesis": "25", "correct": False}), "scoring_inconsistent")
+        self.assertEqual(_classify_recheck({"hypothesis": "25", "correct": True}, {"hypothesis": "27", "correct": False}), "readout_instability")
+
+    def test_skip_maintenance_counterfactual_reconstruction(self):
+        from probe_from_snapshots import reconstruct_skip_maintenance_inputs
+        prev_snap = {"turn_id": 2, "memory_text": "[T1] user | k = 1", "archived_turn_ids": [], "kept_exchanges": [{"turn_id": 2, "session_id": "s1", "user_text": "hi", "assistant_text": "ok"}]}
+        ex3 = Exchange(3, "s1", "update k to 2", "noted")
+        rec = reconstruct_skip_maintenance_inputs("N10", prev_snap, ex3, "what is k?", None, BudgetConfig(input_tokens=8192), {2: Exchange(2, "s1", "hi", "ok"), 3: ex3})
+        self.assertTrue(rec["fits_budget"])
+        self.assertEqual([k.turn_id for k in rec["kept_exchanges"]], [2, 3])
+        rec_over = reconstruct_skip_maintenance_inputs("N10", prev_snap, ex3, "what is k?", None, BudgetConfig(input_tokens=20), {2: Exchange(2, "s1", "hi", "ok"), 3: ex3})
+        self.assertFalse(rec_over["fits_budget"])
+
 
 if __name__ == "__main__":
     unittest.main()

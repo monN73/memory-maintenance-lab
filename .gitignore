@@ -23,3 +23,6 @@ __pycache__/
 /diagnostics/
 /archive/**/runs/
 /archive/**/reports/
+
+# Generated static Showcase data bundles (rebuilt via scripts/build_showcase.py or published to gh-pages)
+/showcase/data/
