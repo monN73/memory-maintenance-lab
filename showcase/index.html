@@ -43,8 +43,8 @@
           </div>
           <div class="glossary-item">
             <b>两套离线冻结探针计划（<code>Plan A</code> / <code>Plan B</code>）</b>
-            <div><b><code>Plan A</code></b>：冻结 <code>s-ku-10-v1</code> 原运行快照，对每题<strong>最后一条标注证据轮至末轮</strong>（共 330 题-轮 × 14 策略 = 4,620 格）逐轮只读重放，精确定位“哪一轮首次答错”。<br>
-            <b><code>Plan B</code></b>：对 <code>s-dev-30</code> 中 7 道典型反转题，在 <code>N8–N14</code> <strong>共同离散检查点</strong>（483 格，0 缺口）做统一冻结重放，消除在线探针触发频率不同带来的比较偏差。</div>
+            <div><b><code>Plan A</code></b>：冻结 <code>s-ku-10-v1</code> 原运行快照，对每题<strong>最后一条标注证据轮至末轮</strong>（共 330 题-轮 × 15 策略 = 4,950 格）逐轮只读重放，精确定位“哪一轮首次答错”。<br>
+            <b><code>Plan B</code></b>：对 <code>s-dev-30</code> 中 7 道典型反转题，在 <code>N6, N8–N14</code> <strong>共同离散检查点</strong>（552 格）做统一冻结重放，消除在线探针触发频率不同带来的比较偏差。</div>
           </div>
           <div class="glossary-item">
             <b>题目徽章：<code>abs</code> / <code>开发暴露</code> / <code>Plan B</code> / <code>⚠ 不稳定</code></b>
@@ -59,8 +59,8 @@
       <div class="card">
         <div class="card-head">
           <div>
-            <h2>跨数据集 14+1 策略终态对比总表（s-dev-30 / s-ku-10 / oracle-5）</h2>
-            <div class="muted">统一采用 LongMemEval 公开基准与 ecnu-plus 问答/裁判模型；受控策略 B=8192，N1/N5 使用 131072 模型上下文上限，N6 为代码已就绪但暂缓批跑项。</div>
+            <h2>跨数据集 15 策略终态对比总表（s-dev-30 / s-ku-10 / oracle-5）</h2>
+            <div class="muted">统一采用 LongMemEval 公开基准与 ecnu-plus 问答/裁判模型；受控策略 B=8192，N1/N5 使用 131072 模型上下文上限，N0–N14 全部 15 个策略已完整执行并结算。</div>
           </div>
         </div>
         <div class="table-wrap" id="benchmarkTableWrap"></div>
@@ -90,8 +90,8 @@
       <div class="card">
         <div class="card-head">
           <div>
-            <h3>s-dev-30（30 题 × 14 策略 = 420 格）终态结果热力表</h3>
-            <div class="muted">来源批次：<code>longmemeval-s-dev-30-merged14--ecnu--20261120T003000000000+0800</code>（<code>scoring_pending=0</code>）。高亮带标签题为进入 Plan B 共同检查点深挖的 7 道样本。</div>
+            <h3>s-dev-30（30 题 × 15 策略 = 450 格）终态结果热力表</h3>
+            <div class="muted">来源批次：<code>longmemeval-s-dev-30-merged15--ecnu--20261124T150000000000+0800</code>（<code>scoring_pending=0</code>）。高亮带标签题为进入 Plan B 共同检查点深挖的 7 道样本。</div>
           </div>
           <div class="filter-bar">
             <select id="sdevTypeFilter">
@@ -150,8 +150,8 @@
             <div class="muted" id="matrixSub">点击任意单元格，直接进入该题该策略的首次转错边界轮次。</div>
           </div>
           <div class="filter-bar">
-            <button type="button" class="pill-btn active" data-plan="plan_a">Plan A · s-ku-10-v1（10 题 × 14 策略，4,472 探针）</button>
-            <button type="button" class="pill-btn" data-plan="plan_b">Plan B · s-dev-30 反转专题（7 题 × N8–N14，483 探针）</button>
+            <button type="button" class="pill-btn active" data-plan="plan_a">Plan A · s-ku-10-v1（10 题 × 15 策略，4,742 探针）</button>
+            <button type="button" class="pill-btn" data-plan="plan_b">Plan B · s-dev-30 反转专题（7 题 × N6, N8–N14，518 探针）</button>
           </div>
         </div>
         <div id="planChecklistBanner" class="muted" style="margin-bottom:10px"></div>
@@ -257,8 +257,8 @@
         </div>
         <div class="glossary-grid">
           <div class="glossary-item">
-            <b>1. <code>s-dev-30</code>（<code>s-dev-30-merged14</code>）</b>
-            从公开 LongMemEval-S 抽取的 30 题分层开发集，覆盖 single-session、multi-session、temporal-reasoning、knowledge-update、preference 与拒答题（<code>_abs</code>）。单题通常超过 200–500 轮对话，真实检验 8192 预算下的长程记忆维护能力；总表共 420 格（30 题 × 14 策略，358 结算 + 58 溢出 + 4 预算错误，<code>scoring_pending=0</code>）。
+            <b>1. <code>s-dev-30</code>（<code>s-dev-30-merged15</code>）</b>
+            从公开 LongMemEval-S 抽取的 30 题分层开发集，覆盖 single-session、multi-session、temporal-reasoning、knowledge-update、preference 与拒答题（<code>_abs</code>）。单题通常超过 200–500 轮对话，真实检验 8192 预算下的长程记忆维护能力；总表共 450 格（30 题 × 15 策略，378 结算 + 58 溢出 + 14 预算错误，<code>scoring_pending=0</code>）。
           </div>
           <div class="glossary-item">
             <b>2. <code>s-ku-10</code>（<code>s-ku-10-v1</code>）</b>
@@ -270,11 +270,11 @@
           </div>
           <div class="glossary-item">
             <b>4. <code>Plan A</code>（尾段逐轮离线快照重放）</b>
-            针对 <code>s-ku-10-v1</code> 原运行（保存了每轮 <code>snapshots/turn_*.json</code>）的冻结重放计划。探测区间为每题“最后一条标注证据轮至末轮”（合计 330 个题-轮 × 14 策略 = 4,620 格，4,472 格完成探针、148 格为 <code>N1/N4/N5</code> 提前终止缺口），用于定位每题每个策略在哪一轮首次答错。
+            针对 <code>s-ku-10-v1</code> 原运行（保存了每轮 <code>snapshots/turn_*.json</code>）的冻结重放计划。探测区间为每题“最后一条标注证据轮至末轮”（合计 330 个题-轮 × 15 策略 = 4,950 格，4,742 格完成探针、208 格为 <code>N1/N4/N5/N6</code> 提前终止缺口），用于定位每题每个策略在哪一轮首次答错。
           </div>
           <div class="glossary-item">
             <b>5. <code>Plan B</code>（<code>s-dev-30</code> 反转题共同检查点）</b>
-            从 <code>s-dev-30</code> 挑选 7 道发生过正误反转的样本，在 <code>N8–N14</code> 七个策略的共同离散检查点上执行冻结重放（483 格，0 缺口），解决原运行在线探针只在各自维护轮触发（N8 350 次 vs N9/N10 628 次）导致无法同轴对比的问题。
+            从 <code>s-dev-30</code> 挑选 7 道发生过正误反转的样本，在 <code>N6, N8–N14</code> 八个策略的共同离散检查点上执行冻结重放（552 格，518 格完成探针、34 格为 <code>N6</code> 预算终止缺口），解决原运行在线探针只在各自维护轮触发（N8 350 次 vs N9/N10 628 次）导致无法同轴对比的问题。
           </div>
           <div class="glossary-item">
             <b>6. <code>abs</code> / <code>拒答样本 (_abs)</code></b>

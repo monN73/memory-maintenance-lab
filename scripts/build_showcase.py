@@ -146,16 +146,16 @@ STRATEGY_SPECS: list[dict[str, Any]] = [
     {
         "id": "N6",
         "name": "Chunked LLM compaction",
-        "zh_name": "分块 LLM 摘要（暂缓批跑）",
+        "zh_name": "分块 LLM 摘要",
         "family": "window_compact",
         "family_zh": "滑窗 / 压缩",
-        "status": "deferred",
+        "status": "executed",
         "visible_history": "最近完整轮次",
         "explicit_memory": "M≤2048（分块再合并摘要）",
         "budget_rule": "B=8192，M≤2048",
         "archive_policy": "—",
-        "maintenance_mechanism": "每轮对超限历史分块摘要后再合并；代码已实现并验证单题通路，因辅助 LLM 消耗极高暂缓全量批跑。",
-        "control_note": "v1.0 明确暂缓项（代码已就绪）",
+        "maintenance_mechanism": "每轮对超限历史分块摘要后再合并（chunk + merge）；受控预算 B=8192，M≤2048。",
+        "control_note": "分块再合并 LLM 摘要基线",
     },
     {
         "id": "N7",
@@ -698,6 +698,36 @@ def _build_case_file(
     out_file.write_text(js_body, encoding="utf-8")
 
 
+def _build_plan_checklist(plan_dir: Path) -> dict[str, int]:
+    vc = _read_json(plan_dir / "verification_checklist.json")
+    recs = []
+    for rf in (plan_dir / "rechecks").glob("*/*/*.jsonl"):
+        for line in rf.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                recs.append(json.loads(line))
+    cfs = [json.loads(cf.read_text(encoding="utf-8")) for cf in (plan_dir / "counterfactuals").glob("*/*/*.json")]
+    rec_consistent = sum(1 for r in recs if r.get("recheck_classification") == "consistent")
+    rec_inst = sum(1 for r in recs if r.get("recheck_classification") == "readout_instability")
+    cf_inbudget_ok = sum(1 for c in cfs if c.get("fits_budget") and c.get("correct"))
+    cf_over = sum(1 for c in cfs if c.get("fits_budget") is False)
+    return {
+        "total": int(vc["total_cells"]),
+        "reusable_ok": int(vc["reusable_ok"]),
+        "pending_new": int(vc["pending_new"]),
+        "termination_gaps": int(vc["termination_gaps_total"]),
+        "termination_turn_no_snapshot": int(vc["termination_turn_no_snapshot"]),
+        "post_termination": int(vc["post_termination"]),
+        "unexpected_missing": int(vc["unexpected_missing"]),
+        "mismatch_error": int(vc["mismatch_error"]),
+        "rechecks_total": len(recs),
+        "rechecks_consistent": rec_consistent,
+        "rechecks_instability": rec_inst,
+        "cf_total": len(cfs),
+        "cf_inbudget_ok": cf_inbudget_ok,
+        "cf_over_budget": cf_over,
+    }
+
+
 def build_showcase(out_dir: Path | None = None) -> dict[str, Any]:
     out_dir = out_dir or (ROOT / "showcase")
     data_dir = out_dir / "data"
@@ -706,8 +736,8 @@ def build_showcase(out_dir: Path | None = None) -> dict[str, Any]:
     dataset_items = _read_json(ROOT / "data/longmemeval/longmemeval_s_cleaned.json")
     raw_by_qid = {item["question_id"]: item for item in dataset_items}
 
-    sdev_report_dir = ROOT / "reports/ecnu-plus/longmemeval-s-dev-30-merged14--ecnu--20261120T003000000000+0800"
-    sku_report_dir = ROOT / "reports/ecnu-plus/longmemeval-s-ku-10-v1--ecnu--20261119T170854116002+0800"
+    sdev_report_dir = ROOT / "reports/ecnu-plus/longmemeval-s-dev-30-merged15--ecnu--20261124T150000000000+0800"
+    sku_report_dir = ROOT / "reports/ecnu-plus/longmemeval-s-ku-10-v1-merged15--ecnu--20261124T080000000000+0800"
 
     sdev_summary = _read_json(sdev_report_dir / "summary.json")
     sku_summary = _read_json(sku_report_dir / "summary.json")
@@ -836,7 +866,7 @@ def build_showcase(out_dir: Path | None = None) -> dict[str, Any]:
         },
         {
             "tag": "拒答样本对遗忘不敏感对照",
-            "title": "bc8a6e93_abs · N8–N14（10 个检查点全对）",
+            "title": "bc8a6e93_abs · N6, N8–N14（有效检查点全对）",
             "plan_key": "plan_b",
             "question_id": "bc8a6e93_abs",
             "strategy": "N9",
@@ -862,12 +892,12 @@ def build_showcase(out_dir: Path | None = None) -> dict[str, Any]:
             "s_dev_30": {
                 "batch_id": sdev_summary["batch_id"],
                 "question_count": 30,
-                "strategies_executed": 14,
-                "total_cells": 420,
-                "scored_cells": 358,
-                "overflow_cells": 58,
-                "error_cells": 4,
-                "scoring_pending": 0,
+                "strategies_executed": len(sdev_summary["overview"]),
+                "total_cells": sum(int(r["planned"]) for r in sdev_summary["overview"]),
+                "scored_cells": sum(int(r["judged"]) for r in sdev_summary["overview"]),
+                "overflow_cells": sum(int(r.get("overflow") or 0) for r in sdev_summary["overview"]),
+                "error_cells": sum(int(r.get("errors") or 0) for r in sdev_summary["overview"]),
+                "scoring_pending": sum(int(r.get("scoring_pending") or 0) for r in sdev_summary["overview"]),
                 "overview": sdev_summary["overview"],
                 "comparisons": sdev_summary["comparisons"],
                 "online_probes": sdev_online,
@@ -877,7 +907,7 @@ def build_showcase(out_dir: Path | None = None) -> dict[str, Any]:
             "s_ku_10": {
                 "batch_id": sku_summary["batch_id"],
                 "question_count": 10,
-                "strategies_executed": 14,
+                "strategies_executed": len(sku_summary["overview"]),
                 "overview": sku_summary["overview"],
                 "comparisons": sku_summary["comparisons"],
                 "evidence_trajectories": [
@@ -896,46 +926,18 @@ def build_showcase(out_dir: Path | None = None) -> dict[str, Any]:
         "plans": {
             "plan_a": {
                 "plan_id": plan_a["plan_id"],
-                "title": "Plan A · s-ku-10-v1 全量尾段冻结回放（10 题 × 14 策略）",
+                "title": f"Plan A · s-ku-10-v1 全量尾段冻结回放（10 题 × {len(plan_a['strategies'])} 策略）",
                 "selection_rule": plan_a["selection_rule"],
-                "checklist": {
-                    "total": 4620,
-                    "reusable_ok": 4472,
-                    "pending_new": 0,
-                    "termination_gaps": 148,
-                    "termination_turn_no_snapshot": 14,
-                    "post_termination": 134,
-                    "unexpected_missing": 0,
-                    "mismatch_error": 0,
-                    "rechecks_total": 70,
-                    "rechecks_consistent": 67,
-                    "rechecks_instability": 3,
-                    "cf_total": 33,
-                    "cf_inbudget_ok": 21,
-                    "cf_over_budget": 12,
-                },
+                "checklist": _build_plan_checklist(plan_a_dir),
                 "by_strategy": audit_a["by_strategy"],
                 "questions": plan_a_questions,
                 "rows": audit_a_rows,
             },
             "plan_b": {
                 "plan_id": plan_b["plan_id"],
-                "title": "Plan B · s-dev-30 典型反转共同检查点回放（7 题 × N8–N14）",
+                "title": f"Plan B · s-dev-30 典型反转共同检查点回放（7 题 × N6, N8–N14）",
                 "selection_rule": plan_b["selection_rule"],
-                "checklist": {
-                    "total": 483,
-                    "reusable_ok": 483,
-                    "pending_new": 0,
-                    "termination_gaps": 0,
-                    "unexpected_missing": 0,
-                    "mismatch_error": 0,
-                    "rechecks_total": 46,
-                    "rechecks_consistent": 46,
-                    "rechecks_instability": 0,
-                    "cf_total": 23,
-                    "cf_inbudget_ok": 9,
-                    "cf_over_budget": 14,
-                },
+                "checklist": _build_plan_checklist(plan_b_dir),
                 "by_strategy": audit_b["by_strategy"],
                 "questions": plan_b_questions,
                 "rows": audit_b_rows,

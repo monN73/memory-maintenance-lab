@@ -155,23 +155,23 @@
     const kpis = [
       {
         label: "策略全集（N0–N14）",
-        val: "14 + 1",
-        desc: "14 个策略全量执行；N6 分块摘要代码已就绪，因辅助 LLM 成本暂缓批跑",
+        val: `${sdev.strategies_executed} / 15`,
+        desc: "15 个策略全量执行（N0–N14，含 N6 分块 LLM 摘要）",
       },
       {
         label: "s-dev-30（30 题终态合并）",
         val: `${sdev.scored_cells} / ${sdev.total_cells}`,
-        desc: `已结算且 scoring_pending=0；N1/N5 溢出 58 次、N4 预算失败 4 次`,
+        desc: `已结算且 scoring_pending=0；N1/N5 溢出 ${sdev.overflow_cells} 次、N4/N6 预算失败 ${sdev.error_cells} 次`,
       },
       {
         label: "Plan A 尾段快照探针（s-ku-10-v1）",
         val: `${num(pa.reusable_ok)} / ${num(pa.total)}`,
-        desc: `${pa.termination_gaps} 个已解释终止缺口 · ${pa.rechecks_total} 复测（3 例读出不稳定）· ${pa.cf_inbudget_ok} 跳过维护对照命中`,
+        desc: `${pa.termination_gaps} 个已解释终止缺口 · ${pa.rechecks_total} 复测（${pa.rechecks_instability} 例读出不稳定）· ${pa.cf_inbudget_ok} 跳过维护对照命中`,
       },
       {
         label: "Plan B 反转检查点（s-dev-30）",
         val: `${pb.reusable_ok} / ${pb.total}`,
-        desc: `7 题 × N8–N14 共同检查点 · 0 缺口 · ${pb.rechecks_consistent}/${pb.rechecks_total} 复测一致 · ${pb.cf_inbudget_ok} 跳过维护命中`,
+        desc: `7 题 × N6, N8–N14 共同检查点 · ${pb.termination_gaps} 终止缺口 · ${pb.rechecks_consistent}/${pb.rechecks_total} 复测一致 · ${pb.cf_inbudget_ok} 跳过维护命中`,
       },
       {
         label: "oracle-5 高密度短历史基线",
@@ -338,7 +338,7 @@
     const sdev = OV.benchmarks.s_dev_30;
     const typeFilter = document.getElementById("sdevTypeFilter").value;
     const planBOnly = document.getElementById("sdevPlanBOnly").checked;
-    const strats = ["N0", "N1", "N2", "N3", "N4", "N5", "N7", "N8", "N9", "N10", "N11", "N12", "N13", "N14"];
+    const strats = ["N0", "N1", "N2", "N3", "N4", "N5", "N6", "N7", "N8", "N9", "N10", "N11", "N12", "N13", "N14"];
     const cellMap = new Map();
     sdev.results.forEach((r) => cellMap.set(`${r.question_id}::${r.strategy}`, r));
 
@@ -485,8 +485,8 @@
     const cl = plan.checklist;
     const strats =
       planKey === "plan_a"
-        ? ["N0", "N1", "N2", "N3", "N4", "N5", "N7", "N8", "N9", "N10", "N11", "N12", "N13", "N14"]
-        : ["N8", "N9", "N10", "N11", "N12", "N13", "N14"];
+        ? ["N0", "N1", "N2", "N3", "N4", "N5", "N6", "N7", "N8", "N9", "N10", "N11", "N12", "N13", "N14"]
+        : ["N6", "N8", "N9", "N10", "N11", "N12", "N13", "N14"];
 
     document.getElementById("matrixTitle").textContent = `${plan.title} · 失效区间矩阵 (last_ok, first_reg]`;
     document.getElementById("planChecklistBanner").innerHTML =
@@ -587,8 +587,8 @@
   function populateStrategySelect() {
     const strats =
       state.planKey === "plan_a"
-        ? ["N0", "N1", "N2", "N3", "N4", "N5", "N7", "N8", "N9", "N10", "N11", "N12", "N13", "N14"]
-        : ["N8", "N9", "N10", "N11", "N12", "N13", "N14"];
+        ? ["N0", "N1", "N2", "N3", "N4", "N5", "N6", "N7", "N8", "N9", "N10", "N11", "N12", "N13", "N14"]
+        : ["N6", "N8", "N9", "N10", "N11", "N12", "N13", "N14"];
     const sel = document.getElementById("selStrategy");
     sel.innerHTML = strats.map((s) => `<option value="${s}">${s}</option>`).join("");
     if (!strats.includes(state.strategy)) {
