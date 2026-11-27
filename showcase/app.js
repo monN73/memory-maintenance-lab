@@ -229,6 +229,8 @@
             </td>
             <td class="num">${k10 && k10.avg_evidence_retention != null ? pct(k10.avg_evidence_retention) : "—"}</td>
             <td class="num">${o5 ? `<b>${pct(o5.end_to_end_success)}</b> <span class="muted">(${o5.correct}/${o5.planned})</span>` : "—"}</td>
+            <td class="num">${d30 ? num(d30.total_tokens) : "—"}</td>
+            <td class="num">${k10 ? num(k10.total_tokens) : "—"}</td>
             <td class="num">${d30 ? `${Math.round(d30.total_latency_p50_ms)} ms` : "—"}</td>
           </tr>`;
       })
@@ -246,6 +248,8 @@
             <th>s-ku-10 端到端正确率</th>
             <th class="num">s-ku-10 平均证据留存</th>
             <th class="num">oracle-5</th>
+            <th class="num">s-dev-30 总 Token</th>
+            <th class="num">s-ku-10 总 Token</th>
             <th class="num">s-dev-30 延迟 P50</th>
           </tr>
         </thead>
@@ -465,16 +469,19 @@
                       <div class="muted">s-dev-30</div>
                       <b>${d30 ? pct(d30.end_to_end_success) : "—"}</b>
                       <div class="muted">${d30 ? `${d30.correct}/${d30.planned}` : ""}</div>
+                      <div class="muted">${d30 ? `${num(d30.total_tokens)} tok` : ""}</div>
                     </div>
                     <div class="mcell">
                       <div class="muted">s-ku-10</div>
                       <b>${k10 ? pct(k10.end_to_end_success) : "—"}</b>
                       <div class="muted">${k10 ? `${k10.correct}/${k10.planned}` : ""}</div>
+                      <div class="muted">${k10 ? `${num(k10.total_tokens)} tok` : ""}</div>
                     </div>
                     <div class="mcell">
                       <div class="muted">oracle-5</div>
                       <b>${o5 ? pct(o5.end_to_end_success) : "—"}</b>
                       <div class="muted">${o5 ? `${o5.correct}/${o5.planned}` : ""}</div>
+                      <div class="muted">${o5 ? `${num(o5.total_tokens)} tok` : ""}</div>
                     </div>
                   </div>`
             }
