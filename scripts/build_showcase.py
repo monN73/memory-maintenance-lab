@@ -349,15 +349,16 @@ def _compute_sdev30_online_probes() -> dict[str, Any]:
 
 
 def _load_oracle5_summary() -> dict[str, Any]:
-    files = [
-        ROOT / "reports/ecnu-plus/longmemeval-oracle-5--ecnu--20261117T231654246753+0800/summary.json",
-        ROOT / "reports/ecnu-plus/longmemeval-oracle-5-n5n7--ecnu--20261118T151925052109+0800/summary.json",
-        ROOT / "reports/ecnu-plus/longmemeval-oracle-5-n8n9n10--ecnu--20261118T165630973039+0800/summary.json",
-        ROOT / "reports/ecnu-plus/longmemeval-oracle-5-n6-n11-n14--ecnu--20261125T103742269543+0800/summary.json",
+    report_dirs = [
+        ROOT / "reports/ecnu-plus/longmemeval-oracle-5--ecnu--20261117T231654246753+0800",
+        ROOT / "reports/ecnu-plus/longmemeval-oracle-5-n5n7--ecnu--20261118T151925052109+0800",
+        ROOT / "reports/ecnu-plus/longmemeval-oracle-5-n8n9n10--ecnu--20261118T165630973039+0800",
+        ROOT / "reports/ecnu-plus/longmemeval-oracle-5-n6-n11-n14--ecnu--20261125T103742269543+0800",
     ]
     by_strategy: dict[str, Any] = {}
-    for fp in files:
-        data = _read_json(fp)
+    results_by_key: dict[tuple[str, str], dict[str, Any]] = {}
+    for rdir in report_dirs:
+        data = _read_json(rdir / "summary.json")
         for row in data.get("overview", []):
             by_strategy[row["strategy"]] = {
                 "strategy": row["strategy"],
@@ -369,12 +370,32 @@ def _load_oracle5_summary() -> dict[str, Any]:
                 "errors": row.get("errors", 0),
                 "total_tokens": row.get("total_tokens", 0),
             }
+        csv_path = rdir / "question-results.csv"
+        if csv_path.exists():
+            results_by_key.update(_load_question_csv(csv_path))
+
+    oracle_items = _read_json(ROOT / "data/longmemeval/longmemeval_oracle.json")
+    oracle_by_qid = {item["question_id"]: item for item in oracle_items}
+    o5_manifest = _read_json(ROOT / "data/manifests/oracle-5.json")
+    questions_meta: dict[str, Any] = {}
+    for qid in o5_manifest["question_ids"]:
+        adapted = adapt_longmemeval_item(oracle_by_qid[qid])
+        questions_meta[qid] = {
+            "question_id": qid,
+            "question": adapted.question,
+            "expected": adapted.answer,
+            "question_type": adapted.question_type,
+            "is_abstention": bool(adapted.is_abstention),
+        }
+
     n7_probe = _read_json(
         ROOT / "reports/ecnu-plus/longmemeval-oracle-5-n7-probe--ecnu--20261118T153500890902+0800/summary.json"
     )
     return {
         "question_count": 5,
         "by_strategy": by_strategy,
+        "questions": questions_meta,
+        "results": list(results_by_key.values()),
         "n7_every_turn_note": {
             "batch_id": n7_probe["batch_id"],
             "correct": n7_probe["overview"][0]["correct"],

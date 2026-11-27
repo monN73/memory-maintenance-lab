@@ -332,6 +332,28 @@
     selType.addEventListener("change", renderSdevHeatmap);
     document.getElementById("sdevPlanBOnly").addEventListener("change", renderSdevHeatmap);
     renderSdevHeatmap();
+    renderOracle5Heatmap();
+  }
+
+  function renderOutcomeCell(qid, s, c) {
+    if (!c) return "<td>—</td>";
+    let cls = "hm-fail";
+    let sym = "×";
+    if (c.outcome_category === "correct") {
+      cls = "hm-correct";
+      sym = "✓";
+    } else if (c.outcome_category === "evidence_lost") {
+      cls = "hm-lost";
+      sym = "✗";
+    } else if (c.outcome_category === "evidence_present_wrong_answer") {
+      cls = "hm-present-wrong";
+      sym = "!";
+    } else if (c.outcome_category === "wrong_no_evidence_eval") {
+      cls = "hm-no-ev";
+      sym = "∅";
+    }
+    const title = `${qid} ${s}: ${c.outcome_category} (${c.status}, ctx=${c.final_ctx_tokens_est}, maint=${c.maintenance_events})`;
+    return `<td style="text-align:center"><span class="hm-dot ${cls}" title="${esc(title)}">${sym}</span></td>`;
   }
 
   function renderSdevHeatmap() {
@@ -353,29 +375,7 @@
     const bodyRows = qids
       .map((qid) => {
         const q = sdev.questions[qid];
-        const tds = strats
-          .map((s) => {
-            const c = cellMap.get(`${qid}::${s}`);
-            if (!c) return "<td>—</td>";
-            let cls = "hm-fail";
-            let sym = "×";
-            if (c.outcome_category === "correct") {
-              cls = "hm-correct";
-              sym = "✓";
-            } else if (c.outcome_category === "evidence_lost") {
-              cls = "hm-lost";
-              sym = "✗";
-            } else if (c.outcome_category === "evidence_present_wrong_answer") {
-              cls = "hm-present-wrong";
-              sym = "!";
-            } else if (c.outcome_category === "wrong_no_evidence_eval") {
-              cls = "hm-no-ev";
-              sym = "∅";
-            }
-            const title = `${qid} ${s}: ${c.outcome_category} (${c.status}, ctx=${c.final_ctx_tokens_est}, maint=${c.maintenance_events})`;
-            return `<td style="text-align:center"><span class="hm-dot ${cls}" title="${esc(title)}">${sym}</span></td>`;
-          })
-          .join("");
+        const tds = strats.map((s) => renderOutcomeCell(qid, s, cellMap.get(`${qid}::${s}`))).join("");
         const qLabel = q.in_plan_b
           ? `<button type="button" class="id-link-btn mono" data-open-planb="${esc(qid)}" title="点击进入 Plan B 共同检查点逐轮剖析">${esc(qid)}</button> <span class="badge badge-purple" title="纳入 s-dev-30 Plan B 共同检查点回放的 7 道反转样本之一">Plan B</span>`
           : `<span class="mono">${esc(qid)}</span>`;
@@ -401,6 +401,34 @@
         openInspector("plan_b", a.dataset.openPlanb, "N9", null);
       });
     });
+  }
+
+  function renderOracle5Heatmap() {
+    const mount = document.getElementById("oracle5HeatmapWrap");
+    const o5 = OV.benchmarks.oracle_5;
+    if (!mount || !o5 || !o5.questions || !o5.results) return;
+    const strats = ["N0", "N1", "N2", "N3", "N4", "N5", "N6", "N7", "N8", "N9", "N10", "N11", "N12", "N13", "N14"];
+    const cellMap = new Map();
+    o5.results.forEach((r) => cellMap.set(`${r.question_id}::${r.strategy}`, r));
+    const headCols = strats.map((s) => `<th style="text-align:center">${s}</th>`).join("");
+    const bodyRows = Object.keys(o5.questions)
+      .map((qid) => {
+        const q = o5.questions[qid];
+        const tds = strats.map((s) => renderOutcomeCell(qid, s, cellMap.get(`${qid}::${s}`))).join("");
+        return `
+          <tr>
+            <td><span class="mono">${esc(qid)}</span> ${q.is_abstention ? '<span class="badge badge-muted">abs</span>' : ""}</td>
+            <td>${esc(q.question_type)}</td>
+            <td title="${esc(q.question)}">${esc(q.question.slice(0, 56))}${q.question.length > 56 ? "…" : ""}</td>
+            ${tds}
+          </tr>`;
+      })
+      .join("");
+    mount.innerHTML = `
+      <table>
+        <thead><tr><th>题目</th><th>题型</th><th>问题摘要</th>${headCols}</tr></thead>
+        <tbody>${bodyRows}</tbody>
+      </table>`;
   }
 
   // ---------------- VIEW 2: STRATEGIES ----------------
