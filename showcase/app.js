@@ -171,7 +171,7 @@
       {
         label: "Plan B 反转检查点（s-dev-30）",
         val: `${pb.reusable_ok} / ${pb.total}`,
-        desc: `7 题 × N6, N8–N14 共同检查点 · ${pb.termination_gaps} 终止缺口 · ${pb.rechecks_consistent}/${pb.rechecks_total} 复测一致 · ${pb.cf_inbudget_ok} 跳过维护命中`,
+        desc: `7 题 × N6–N14 共同检查点 · ${pb.termination_gaps} 终止缺口 · ${pb.rechecks_consistent}/${pb.rechecks_total} 复测一致 · ${pb.cf_inbudget_ok} 跳过维护命中`,
       },
       {
         label: "oracle-5 高密度短历史基线",
@@ -521,7 +521,7 @@
     const strats =
       planKey === "plan_a"
         ? ["N0", "N1", "N2", "N3", "N4", "N5", "N6", "N7", "N8", "N9", "N10", "N11", "N12", "N13", "N14"]
-        : ["N6", "N8", "N9", "N10", "N11", "N12", "N13", "N14"];
+        : ["N6", "N7", "N8", "N9", "N10", "N11", "N12", "N13", "N14"];
 
     document.getElementById("matrixTitle").textContent = `${plan.title} · 失效区间矩阵 (last_ok, first_reg]`;
     document.getElementById("planChecklistBanner").innerHTML =
@@ -623,7 +623,7 @@
     const strats =
       state.planKey === "plan_a"
         ? ["N0", "N1", "N2", "N3", "N4", "N5", "N6", "N7", "N8", "N9", "N10", "N11", "N12", "N13", "N14"]
-        : ["N6", "N8", "N9", "N10", "N11", "N12", "N13", "N14"];
+        : ["N6", "N7", "N8", "N9", "N10", "N11", "N12", "N13", "N14"];
     const sel = document.getElementById("selStrategy");
     sel.innerHTML = strats.map((s) => `<option value="${s}">${s}</option>`).join("");
     if (!strats.includes(state.strategy)) {

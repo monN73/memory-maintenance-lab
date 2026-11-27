@@ -44,7 +44,7 @@
           <div class="glossary-item">
             <b>两套离线冻结探针计划（<code>Plan A</code> / <code>Plan B</code>）</b>
             <div><b><code>Plan A</code></b>：冻结 <code>s-ku-10-v1</code> 原运行快照，对每题<strong>最后一条标注证据轮至末轮</strong>（共 330 题-轮 × 15 策略 = 4,950 格）逐轮只读重放，精确定位“哪一轮首次答错”。<br>
-            <b><code>Plan B</code></b>：对 <code>s-dev-30</code> 中 7 道典型反转题，在 <code>N6, N8–N14</code> <strong>共同离散检查点</strong>（552 格）做统一冻结重放，消除在线探针触发频率不同带来的比较偏差。</div>
+            <b><code>Plan B</code></b>：对 <code>s-dev-30</code> 中 7 道典型反转题，在 <code>N6–N14</code> <strong>共同离散检查点</strong>（621 格）做统一冻结重放，消除在线探针触发频率不同带来的比较偏差。</div>
           </div>
           <div class="glossary-item">
             <b>题目徽章：<code>abs</code> / <code>开发暴露</code> / <code>Plan B</code> / <code>⚠ 不稳定</code></b>
@@ -161,7 +161,7 @@
           </div>
           <div class="filter-bar">
             <button type="button" class="pill-btn active" data-plan="plan_a">Plan A · s-ku-10-v1（10 题 × 15 策略，4,742 探针）</button>
-            <button type="button" class="pill-btn" data-plan="plan_b">Plan B · s-dev-30 反转专题（7 题 × N6, N8–N14，518 探针）</button>
+            <button type="button" class="pill-btn" data-plan="plan_b">Plan B · s-dev-30 反转专题（7 题 × N6–N14，587 探针）</button>
           </div>
         </div>
         <div id="planChecklistBanner" class="muted" style="margin-bottom:10px"></div>
@@ -284,7 +284,7 @@
           </div>
           <div class="glossary-item">
             <b>5. <code>Plan B</code>（<code>s-dev-30</code> 反转题共同检查点）</b>
-            从 <code>s-dev-30</code> 挑选 7 道发生过正误反转的样本，在 <code>N6, N8–N14</code> 八个策略的共同离散检查点上执行冻结重放（552 格，518 格完成探针、34 格为 <code>N6</code> 预算终止缺口），解决原运行在线探针只在各自维护轮触发（N8 350 次 vs N9/N10 628 次）导致无法同轴对比的问题。
+            从 <code>s-dev-30</code> 挑选 7 道发生过正误反转的样本，在 <code>N6–N14</code> 九个策略的共同离散检查点上执行冻结重放（621 格，587 格完成探针、34 格为 <code>N6</code> 预算终止缺口），解决原运行在线探针只在各自维护轮触发（N8 350 次 vs N9/N10 628 次）导致无法同轴对比的问题。
           </div>
           <div class="glossary-item">
             <b>6. <code>abs</code> / <code>拒答样本 (_abs)</code></b>

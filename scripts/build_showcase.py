@@ -888,7 +888,7 @@ def build_showcase(out_dir: Path | None = None) -> dict[str, Any]:
         },
         {
             "tag": "拒答样本对遗忘不敏感对照",
-            "title": "bc8a6e93_abs · N6, N8–N14（有效检查点全对）",
+            "title": "bc8a6e93_abs · N6–N14（有效检查点全对）",
             "plan_key": "plan_b",
             "question_id": "bc8a6e93_abs",
             "strategy": "N9",
@@ -957,7 +957,7 @@ def build_showcase(out_dir: Path | None = None) -> dict[str, Any]:
             },
             "plan_b": {
                 "plan_id": plan_b["plan_id"],
-                "title": f"Plan B · s-dev-30 典型反转共同检查点回放（7 题 × N6, N8–N14）",
+                "title": f"Plan B · s-dev-30 典型反转共同检查点回放（7 题 × N6–N14）",
                 "selection_rule": plan_b["selection_rule"],
                 "checklist": _build_plan_checklist(plan_b_dir),
                 "by_strategy": audit_b["by_strategy"],
