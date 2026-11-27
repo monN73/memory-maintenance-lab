@@ -26,3 +26,7 @@ __pycache__/
 
 # Generated static Showcase data bundles (rebuilt via scripts/build_showcase.py or published to gh-pages)
 /showcase/data/
+
+# Local presentation slides and generated chart assets
+/docs/*.pptx
+/docs/_ppt_charts*/

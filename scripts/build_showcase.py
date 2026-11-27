@@ -353,6 +353,7 @@ def _load_oracle5_summary() -> dict[str, Any]:
         ROOT / "reports/ecnu-plus/longmemeval-oracle-5--ecnu--20261117T231654246753+0800/summary.json",
         ROOT / "reports/ecnu-plus/longmemeval-oracle-5-n5n7--ecnu--20261118T151925052109+0800/summary.json",
         ROOT / "reports/ecnu-plus/longmemeval-oracle-5-n8n9n10--ecnu--20261118T165630973039+0800/summary.json",
+        ROOT / "reports/ecnu-plus/longmemeval-oracle-5-n6-n11-n14--ecnu--20261125T103742269543+0800/summary.json",
     ]
     by_strategy: dict[str, Any] = {}
     for fp in files:
