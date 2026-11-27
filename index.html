@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Memory Maintenance Lab · Showcase v1.0（N0–N14 记忆维护失效轨迹与反事实对照）</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <h1>Memory Maintenance Lab · Showcase v1.0</h1>
+      <div class="sub" id="topbarMeta">冻结原运行 · 只读快照重放 · 同轮跳过维护对照 · 长程记忆失效轮次定位</div>
+    </div>
+    <nav class="nav-tabs" id="navTabs">
+      <button type="button" class="nav-btn active" data-view="overview">总览与基准数据</button>
+      <button type="button" class="nav-btn" data-view="strategies">N0–N14 策略解析</button>
+      <button type="button" class="nav-btn" data-view="matrix">失效轮次矩阵</button>
+      <button type="button" class="nav-btn" data-view="inspector">逐轮对话与三线证据工作台</button>
+      <button type="button" class="nav-btn" data-view="glossary">术语与标签说明</button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <!-- VIEW 1: OVERVIEW -->
+    <section id="view-overview" class="panel-view active">
+      <div class="kpi-grid" id="overviewKpis"></div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>实验数据集、Plan A / Plan B 与核心标签速览</h2>
+            <div class="muted">先看懂基准切片与徽章口径，再下钻到策略失效轮次与逐轮证据。</div>
+          </div>
+          <button type="button" class="btn" id="btnOpenGlossary">查看完整术语表 →</button>
+        </div>
+        <div class="glossary-grid">
+          <div class="glossary-item">
+            <b>三大基准数据集（<code>s-dev-30</code> / <code>s-ku-10</code> / <code>oracle-5</code>）</b>
+            <div><b><code>s-dev-30</code></b>：LongMemEval-S 30 题分层开发集，含大量跨会话长噪声历史，是受控 8K 预算与长程记忆衰退的主战场。<br>
+            <b><code>s-ku-10</code>（<code>s-ku-10-v1</code>）</b>：10 题 <code>knowledge-update</code> 专题切片，聚焦“事实更新后旧值干扰与新值滑出”。<br>
+            <b><code>oracle-5</code></b>：5 题去除无关会话噪声的短历史基线（用来对照 <code>N1</code> 无压缩基线在无噪声 vs 真实长历史下的落差）。</div>
+          </div>
+          <div class="glossary-item">
+            <b>两套离线冻结探针计划（<code>Plan A</code> / <code>Plan B</code>）</b>
+            <div><b><code>Plan A</code></b>：冻结 <code>s-ku-10-v1</code> 原运行快照，对每题<strong>最后一条标注证据轮至末轮</strong>（共 330 题-轮 × 15 策略 = 4,950 格）逐轮只读重放，精确定位“哪一轮首次答错”。<br>
+            <b><code>Plan B</code></b>：对 <code>s-dev-30</code> 中 7 道典型反转题，在 <code>N6–N14</code> <strong>共同离散检查点</strong>（621 格）做统一冻结重放，消除在线探针触发频率不同带来的比较偏差。</div>
+          </div>
+          <div class="glossary-item">
+            <b>题目徽章：<code>abs</code> / <code>开发暴露</code> / <code>Plan B</code> / <code>⚠ 不稳定</code></b>
+            <div><span class="badge badge-muted">abs</span>（拒答样本 <code>_abs</code>）：标准答案为“未提及/不知道”；信息被遗忘后模型仍会拒答，故不会发生遗忘反转。<br>
+            <span class="badge badge-warn">开发暴露</span>（<code>01493427</code>、<code>45dc21b6</code>）：开发阶段曾用于调试 <code>N14</code> 提取规则与 <code>P3</code> 重放校验，特此声明。<br>
+            <span class="badge badge-purple">Plan B</span>：纳入 <code>s-dev-30</code> 共同检查点逐轮剖析的 7 道题。<br>
+            <span class="badge badge-warn">⚠ readout_instability</span>：边界 <code>--recheck</code> 两次回答实质翻转（如 <code>4d6b87c8</code> 在 25 与拟新增后 27 间摇摆）。</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>跨数据集 15 策略终态对比总表（s-dev-30 / s-ku-10 / oracle-5）</h2>
+            <div class="muted">统一采用 LongMemEval 公开基准与 ecnu-plus 问答/裁判模型；受控策略 B=8192，N1/N5 使用 131072 模型上下文上限，N0–N14 全部 15 个策略已完整执行并结算。总 Token 仅统计策略维护与终答消耗（不含探针与裁判评测开销）。</div>
+          </div>
+        </div>
+        <div class="table-wrap" id="benchmarkTableWrap"></div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h3>s-dev-30 全 30 题在线探针完整分母统计（N8–N10）</h3>
+              <div class="muted">来自 <code>s-dev-30-n8n9n10</code> 的 <code>on_maintenance</code> 原生在线探针，明确区分子集触发频次与跨策略共同检查点（Plan B）。</div>
+            </div>
+          </div>
+          <div id="sdevOnlineSummary"></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h3>s-ku-10-v1 三层证据留存轨迹摘要</h3>
+              <div class="muted">按消息级（<code>has_answer</code>）与会话级（<code>answer_session_ids</code>）双分母追踪，所有已观测遗失均已归因。</div>
+            </div>
+          </div>
+          <div id="skuEvidenceSummary"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3>s-dev-30（30 题 × 15 策略 = 450 格）终态结果热力表</h3>
+            <div class="muted">来源批次：<code>longmemeval-s-dev-30-merged15--ecnu--20261124T150000000000+0800</code>（<code>scoring_pending=0</code>）。高亮带标签题为进入 Plan B 共同检查点深挖的 7 道样本。</div>
+          </div>
+          <div class="filter-bar">
+            <select id="sdevTypeFilter">
+              <option value="all">全部题型（30 题）</option>
+            </select>
+            <label class="muted"><input type="checkbox" id="sdevPlanBOnly" /> 仅看 Plan B 7 题</label>
+          </div>
+        </div>
+        <div class="muted" style="margin-bottom:10px">
+          图例：<span class="hm-dot hm-correct">✓</span> 正确
+          <span class="hm-dot hm-lost">✗</span> 证据遗失后答错
+          <span class="hm-dot hm-present-wrong">!</span> 证据仍在但答错
+          <span class="hm-dot hm-no-ev">∅</span> 无证据评估/错误（如 N0）
+          <span class="hm-dot hm-fail">×</span> 溢出或预算失败（N1/N4/N5）
+        </div>
+        <div class="table-wrap" id="sdevHeatmapWrap"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3>oracle-5（5 题 × 15 策略 = 75 格）终态结果热力表</h3>
+            <div class="muted">高密度去噪短历史基线（<code>scoring_pending=0</code>）；用于对照真实长噪声历史（<code>s-dev-30</code>）下全量拼接与受控记忆的退化幅度。</div>
+          </div>
+        </div>
+        <div class="table-wrap" id="oracle5HeatmapWrap"></div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: STRATEGIES N0-N14 -->
+    <section id="view-strategies" class="panel-view">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>N0–N14 记忆维护策略设计谱系与实测影响</h2>
+            <div class="muted">涵盖无记忆/全量基线、滑窗与摘要压缩、有界/无界 BM25 外部归档、结构化可更新事实表与混合读取。</div>
+          </div>
+          <div class="filter-bar" id="strategyFamilyFilter">
+            <button type="button" class="pill-btn active" data-family="all">全部策略 (N0–N14)</button>
+            <button type="button" class="pill-btn" data-family="baseline">基线对照</button>
+            <button type="button" class="pill-btn" data-family="window_compact">滑窗 / 压缩</button>
+            <button type="button" class="pill-btn" data-family="archive_bm25">外部归档 BM25</button>
+            <button type="button" class="pill-btn" data-family="fact_hybrid">事实表 / 混合</button>
+          </div>
+        </div>
+        <div class="strategy-grid" id="strategyCardsGrid"></div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: FAILURE MATRIX -->
+    <section id="view-matrix" class="panel-view">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>精选主打案例（Featured Cases · 一键直达失效轮次与跳过维护对照）</h2>
+            <div class="muted">严格按协议口径区分“预算内跳过维护对照证明直接导致转错”与“区间维护/BM25 排序漂移/边界读出不稳定”。</div>
+          </div>
+        </div>
+        <div class="featured-grid" id="featuredCasesGrid"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2 id="matrixTitle">失效区间矩阵 `(last_ok, first_reg]`</h2>
+            <div class="muted" id="matrixSub">点击任意单元格，直接进入该题该策略的首次转错边界轮次。</div>
+          </div>
+          <div class="filter-bar">
+            <button type="button" class="pill-btn active" data-plan="plan_a">Plan A · s-ku-10-v1（10 题 × 15 策略，4,742 探针）</button>
+            <button type="button" class="pill-btn" data-plan="plan_b">Plan B · s-dev-30 反转专题（7 题 × N6–N14，587 探针）</button>
+          </div>
+        </div>
+        <div id="planChecklistBanner" class="muted" style="margin-bottom:10px"></div>
+        <details open style="margin-bottom:12px">
+          <summary style="margin-top:0">单元格颜色与注释说明（点击展开 / 收起）</summary>
+          <div class="glossary-grid" style="margin-top:8px">
+            <div class="glossary-item">
+              <span class="matrix-cell cell-cf-win" style="display:inline-block;margin-bottom:4px">★跳过答对→维护错</span>
+              <div>区间 <code>(last_ok, first_reg]</code> 在 <code>first_reg</code> 做过 <code>--skip-maintenance</code>：跳过维护且 <code>≤8192</code> 预算内能答对、维持原维护则答错，证明该轮维护直接挤出了关键依据。</div>
+            </div>
+            <div class="glossary-item">
+              <span class="matrix-cell cell-maint-reg" style="display:inline-block;margin-bottom:4px">含维护事件(k)</span>
+              <div>区间内发生过 <code>k</code> 次维护或归档淘汰（<code>events.jsonl</code>）；因跳过即超 <code>8192</code>（<code>over_budget</code>）或未构造对照，严格标为“同轮/区间内发生维护与读出转错”。</div>
+            </div>
+            <div class="glossary-item">
+              <span class="matrix-cell cell-drift-reg" style="display:inline-block;margin-bottom:4px">滑出/读出波动</span>
+              <div>区间 <code>(last_ok, first_reg]</code> 内 <strong>0 次维护事件</strong>，说明由对转错源自新对话不断追加导致窗口位置自然滑出、注意力稀释或模型读出波动。</div>
+            </div>
+            <div class="glossary-item">
+              <span class="matrix-cell cell-init-err" style="display:inline-block;margin-bottom:4px">Txxx首错 · 首次观测即错</span>
+              <div>从探测起点第一轮就答错且后续未形成“先对后错”的退化区间（如 <code>N0</code> 无记忆或新旧值同窗歧义）；仅表示首次观测未答对，不等同于从未学到。</div>
+            </div>
+            <div class="glossary-item">
+              <span class="matrix-cell cell-ok" style="display:inline-block;margin-bottom:4px">未转错 · N轮全对</span>
+              <div>所有有效观测轮次均未出现由对转错；若原运行后期溢出，会附注原终态（如 <code>102轮 (overflow)</code>）提示未测满全程。</div>
+            </div>
+            <div class="glossary-item">
+              <span class="matrix-cell cell-fail" style="display:inline-block;margin-bottom:4px">溢出 / 预算失败 · 缺口m</span>
+              <div>进入探测区间前运行已提前终止（<code>overflow</code> 或 <code>N4</code> 预算超限），<code>m</code> 为缺失的有效轮数；附加 <b>⚠不稳定</b> 表示 <code>--recheck</code> 同一冻结输入两次回答实质翻转（<code>readout_instability</code>）。</div>
+            </div>
+          </div>
+        </details>
+        <div class="table-wrap" id="regressionMatrixWrap"></div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: TURN-BY-TURN INSPECTOR -->
+    <section id="view-inspector" class="panel-view">
+      <div class="card">
+        <div class="inspector-controls">
+          <div class="field">
+            <label for="selPlan">数据集计划</label>
+            <select id="selPlan">
+              <option value="plan_a">Plan A · s-ku-10-v1（10 题尾段逐轮）</option>
+              <option value="plan_b">Plan B · s-dev-30 反转题（7 题共同检查点）</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="selQuestion">题目（Question ID · 题型）</label>
+            <select id="selQuestion"></select>
+          </div>
+          <div class="field">
+            <label for="selStrategy">维护策略（Strategy）</label>
+            <select id="selStrategy"></select>
+          </div>
+          <div class="field" style="display:flex; gap:6px; flex-wrap:wrap">
+            <button type="button" class="btn" id="btnPrevTurn">← 上一轮</button>
+            <button type="button" class="btn" id="btnNextTurn">下一轮 →</button>
+            <button type="button" class="btn btn-primary" id="btnJumpReg">跳至首次转错轮</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="questionHeaderCard"></div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3>同题跨策略失效时间轴对比（点击任意色块直接跳转）</h3>
+            <div class="muted">在同一题目时间轴上对比不同策略在哪一轮首次失去记忆支撑（黑框=首次转错轮 `first_regression_turn`；绿色=对；红色=错；灰色=终止缺口）。</div>
+          </div>
+        </div>
+        <div class="timeline-grid" id="multiStrategyTimeline"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3>当前策略探测轮次导航</h3>
+            <div class="muted">
+              <span class="dot-maint"></span> 含维护事件
+              &nbsp;&nbsp;<span class="dot-cf"></span> 含跳过维护对照
+              &nbsp;&nbsp;<span class="dot-rc"></span> 含边界复测
+              &nbsp;&nbsp;<span class="badge badge-warn">金框</span> 首次转错轮
+            </div>
+          </div>
+          <div id="currentStrategyStats" class="muted"></div>
+        </div>
+        <div class="turn-pills" id="turnPills"></div>
+      </div>
+
+      <div id="turnDetailMount"></div>
+    </section>
+
+    <!-- VIEW 5: GLOSSARY -->
+    <section id="view-glossary" class="panel-view">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>数据集、实验计划（Plan A / B）与徽章/指标完整说明</h2>
+            <div class="muted">本页汇总 Showcase 中出现的所有实验切片名称、回放协议口径与标签含义，便于随时核对。</div>
+          </div>
+        </div>
+        <div class="glossary-grid">
+          <div class="glossary-item">
+            <b>1. <code>s-dev-30</code>（<code>s-dev-30-merged15</code>）</b>
+            从公开 LongMemEval-S 抽取的 30 题分层开发集，覆盖 single-session、multi-session、temporal-reasoning、knowledge-update、preference 与拒答题（<code>_abs</code>）。单题通常超过 200–500 轮对话，真实检验 8192 预算下的长程记忆维护能力；总表共 450 格（30 题 × 15 策略，378 结算 + 58 溢出 + 14 预算错误，<code>scoring_pending=0</code>）。
+          </div>
+          <div class="glossary-item">
+            <b>2. <code>s-ku-10</code>（<code>s-ku-10-v1</code>）</b>
+            LongMemEval-S 中的 10 题 <code>knowledge-update</code>（知识更新）专题切片，考察用户偏好或状态多次更新后，记忆系统是否会误用过时旧值、或把关键依据淘汰出窗口。
+          </div>
+          <div class="glossary-item">
+            <b>3. <code>oracle-5</code></b>
+            仅保留关键会话的 5 题短历史高密度基线，用于证明 <code>N1</code>（131K 全量上下文）在无干扰短历史下能拿到 100%（5/5），但在真实长噪声历史 <code>s-dev-30</code> 下会 29/30 溢出崩盘。
+          </div>
+          <div class="glossary-item">
+            <b>4. <code>Plan A</code>（尾段逐轮离线快照重放）</b>
+            针对 <code>s-ku-10-v1</code> 原运行（保存了每轮 <code>snapshots/turn_*.json</code>）的冻结重放计划。探测区间为每题“最后一条标注证据轮至末轮”（合计 330 个题-轮 × 15 策略 = 4,950 格，4,742 格完成探针、208 格为 <code>N1/N4/N5/N6</code> 提前终止缺口），用于定位每题每个策略在哪一轮首次答错。
+          </div>
+          <div class="glossary-item">
+            <b>5. <code>Plan B</code>（<code>s-dev-30</code> 反转题共同检查点）</b>
+            从 <code>s-dev-30</code> 挑选 7 道发生过正误反转的样本，在 <code>N6–N14</code> 九个策略的共同离散检查点上执行冻结重放（621 格，587 格完成探针、34 格为 <code>N6</code> 预算终止缺口），解决原运行在线探针只在各自维护轮触发（N8 350 次 vs N9/N10 628 次）导致无法同轴对比的问题。
+          </div>
+          <div class="glossary-item">
+            <b>6. <code>abs</code> / <code>拒答样本 (_abs)</code></b>
+            LongMemEval 中后缀带 <code>_abs</code> 的不可回答/拒答题（如 <code>bc8a6e93_abs</code>）。其标准答案要求模型回答“没有提到相关偏好”。由于遗忘历史会让模型更容易回答“不知道”，这类题不会因记忆丢失而由对转错，必须单列以免稀释失效率分析。
+          </div>
+          <div class="glossary-item">
+            <b>7. <code>开发暴露</code>（<code>01493427</code>、<code>45dc21b6</code>）</b>
+            在 <code>s-ku-10</code> 中，这两道公开题曾在研发期间用于检查真实对话抽取通路，并暴露了 <code>N14</code> 前端提取规则改进与 <code>P3</code> 快照重放验收，因此按科研透明度要求显式打上“开发暴露”标记。
+          </div>
+          <div class="glossary-item">
+            <b>8. <code>⚠ readout_instability</code>（读出不稳定）</b>
+            在边界 <code>--recheck</code> 中，使用与主探针完全相同（<code>request_sha256</code> 一致）的冻结输入重放一次：若回答实质改变且裁判结果翻转，标为 <code>readout_instability</code>（如 <code>4d6b87c8</code> 在“25”与“拟新增两部后 27”间摇摆）；若回答不变仅裁判翻转则标为 <code>scoring_inconsistent</code>。
+          </div>
+          <div class="glossary-item">
+            <b>9. 三类回答来源与转错区间 <code>(last_ok, first_reg]</code></b>
+            <b>Dataset Assistant Original</b>：原对话历史中的助手回复；<b>direct_final</b>：原批次运行到末轮后 <code>turn_{N+1}</code> 的终态回答；<b>snapshot_readout</b>：在冻结的 <code>turn_N</code> 快照上只读探针得到的当轮回答。<br>
+            <b><code>(last_ok, first_reg]</code></b>：严格要求退化前存在 <code>correct=True</code> 的 <code>last_ok</code>（若中途有 API 缺口会桥接并标出），区分于可能早于答对轮出现的 <code>first_observed_error_turn</code>。
+          </div>
+          <div class="glossary-item">
+            <b>10. 同轮跳过维护对照（<code>--skip-maintenance</code>）</b>
+            构造 <code>turn_{t-1} + ex_t</code>（同样看到本轮对话、但跳过本轮维护动作）的对照请求：若总估算 token ≤ 8192（<code>fits_budget=true</code>）且跳过维护能答对、维持原维护结果答错，方可标注 <b>★ 跳过答对→维护错</b>；若跳过即超出 8192（<code>over_budget</code>，如 <code>N7/N8/N11/N12/N13</code>），则仅展示相邻快照与维护事件差异。
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="data/overview.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
